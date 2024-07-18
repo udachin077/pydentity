@@ -1,0 +1,37 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+
+[project]
+name = "pydentity"
+version = "1.0.0"
+dependencies = [
+    "pyotp",
+    "email-validator",
+    "bcrypt",
+    "passlib",
+    "python-jose[cryptography]"
+]
+
+[project.optional-dependencies]
+sqlalchemy = [
+    "pydentity-db-sqlalchemy",
+]
+tortoise = [
+    "pydentity-db-tortoise"
+]
+
+[tool.setuptools.packages.find]
+exclude = [
+    "tests*",
+    "example*"
+]
+
+
+[tool.pytest.ini_options]
+minversion = "6.0"
+addopts = "-ra -q"
+testpaths = [
+    "tests",
+]

@@ -1,0 +1,92 @@
+import re
+from typing import Generic, Optional, TYPE_CHECKING
+
+from email_validator import validate_email, EmailNotValidError
+
+from pydentity.abc import IUserValidator
+from pydentity.exc import ArgumentNoneException
+from pydentity.identity_error_describer import IdentityErrorDescriber
+from pydentity.identity_result import IdentityResult
+from pydentity.types import TUser
+from pydentity.utils import is_none_or_empty
+
+if TYPE_CHECKING:
+    from pydentity.user_manager import UserManager
+
+email_pattern = re.compile(r"^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}$")
+
+
+class UserValidator(IUserValidator[TUser], Generic[TUser]):
+    """Provides validation builders for user classes."""
+
+    def __init__(self, errors: Optional[IdentityErrorDescriber] = None):
+        """
+
+        :param errors: The IdentityErrorDescriber used to provider error messages.
+        """
+        self._describer = errors or IdentityErrorDescriber()
+
+    async def validate(self, manager: "UserManager[TUser]", user: TUser) -> IdentityResult:
+        if manager is None:
+            raise ArgumentNoneException("manager")
+        if user is None:
+            raise ArgumentNoneException("user")
+
+        options = manager.options.User
+        errors = []
+
+        await self._validate_username(manager, user, errors)
+
+        if options.REQUIRE_UNIQUE_EMAIL:
+            await self._validate_email(manager, user, errors)
+
+        if not errors:
+            return IdentityResult.success()
+
+        return IdentityResult.failed(*errors)
+
+    async def _validate_username(self, manager: "UserManager[TUser]", user: TUser, errors):
+        username = await manager.get_username(user)
+
+        if is_none_or_empty(username):
+            errors.append(self._describer.InvalidUserName(username))
+            return
+
+        options = manager.options.User
+
+        if (
+                not options.ALLOWED_USERNAME_CHARACTERS.isspace() and
+                any(c not in options.ALLOWED_USERNAME_CHARACTERS for c in username)
+        ):
+            errors.append(self._describer.InvalidUserName(username))
+            return
+
+        owner = await manager.find_by_name(username)
+
+        if owner and (await manager.get_user_id(owner) != await manager.get_user_id(user)):
+            errors.append(self._describer.DuplicateUserName(username))
+
+    async def _validate_email(self, manager: "UserManager[TUser]", user: TUser, errors: list):
+        email = await manager.get_email(user)
+
+        if is_none_or_empty(email):
+            errors.append(self._describer.InvalidEmail(email))
+            return
+
+        try:
+            result = validate_email(email, check_deliverability=False)
+        except EmailNotValidError:
+            errors.append(self._describer.InvalidEmail(email))
+            return
+
+        options = manager.options.User
+
+        if options.ALLOWED_EMAIL_DOMAINS:
+            if result.domain not in options.ALLOWED_EMAIL_DOMAINS:
+                errors.append(self._describer.InvalidDomain(result.domain))
+                return
+
+        owner = await manager.find_by_email(email)
+
+        if owner and (await manager.get_user_id(owner) != await manager.get_user_id(user)):
+            errors.append(self._describer.DuplicateEmail(email))
