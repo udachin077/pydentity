@@ -1,12 +1,14 @@
 import logging
-from typing import Generic, Optional, Iterable
+from typing import Generic, Optional, Iterable, cast
 
 from pydentity.identity_error_describer import IdentityErrorDescriber
-from pydentity.exc import ArgumentNoneException
+from pydentity.exc import ArgumentNoneException, NotSupportedException
 from pydentity.identity_result import IdentityResult
 from pydentity.lookup_normalizer import ILookupNormalizer
+from pydentity.resources import Resources
 from pydentity.role_validator import IRoleValidator
-from pydentity.abc.stores import IRoleStore
+from pydentity.abc.stores import IRoleStore, IRoleClaimStore
+from pydentity.security.claims import Claim
 from pydentity.types import TRole
 
 
@@ -49,6 +51,15 @@ class RoleManager(Generic[TRole]):
         self.key_normalizer = key_normalizer
         self.error_describer: IdentityErrorDescriber = errors or IdentityErrorDescriber()
         self.logger: logging.Logger = logger or logging.getLogger(self.__class__.__name__)
+
+    @property
+    def supports_role_claims(self) -> bool:
+        """
+        Gets a flag indicating whether the underlying persistence store supports Claims for roles.
+
+        :return:
+        """
+        return issubclass(type(self.store), IRoleClaimStore)
 
     async def all(self) -> list[TRole]:
         """
@@ -188,6 +199,51 @@ class RoleManager(Generic[TRole]):
         name = await self.store.get_role_name(role)
         await self.store.set_normalized_role_name(role, self._normalize_key(name))
 
+    async def get_claims(self, role: TRole) -> list[Claim]:
+        """
+        Gets a list of claims associated with the specified role.
+
+        :param role:
+        :return:
+        """
+        if role is None:
+            raise ArgumentNoneException("role")
+
+        return await self._get_claim_store().get_claims(role)
+
+    async def add_claim(self, role: TRole, claim: Claim) -> IdentityResult:
+        """
+        Adds a claim to a role.
+
+        :param role:
+        :param claim:
+        :return:
+        """
+        if role is None:
+            raise ArgumentNoneException("role")
+        if claim is None:
+            raise ArgumentNoneException("claim")
+
+        store = self._get_claim_store()
+        await store.add_claim(role, claim)
+        return await self._update_role(role)
+
+    async def remove_claim(self, role: TRole, claim: Claim) -> IdentityResult:
+        """
+        Removes a claim from a role.
+
+        :param role:
+        :param claim:
+        :return:
+        """
+        if role is None:
+            raise ArgumentNoneException("role")
+        if claim is None:
+            raise ArgumentNoneException("claim")
+
+        await self._get_claim_store().remove_claim(role, claim)
+        return await self._update_role(role)
+
     async def _validate_role(self, role: TRole) -> IdentityResult:
         """
         Should return IdentityResult.Success if validation is successful.
@@ -233,3 +289,8 @@ class RoleManager(Generic[TRole]):
 
         await self.update_normalized_role_name(role)
         return await self.store.update(role)
+
+    def _get_claim_store(self) -> IRoleClaimStore[TRole]:
+        if self.supports_role_claims:
+            return cast(IRoleClaimStore[TRole], self.store)
+        raise NotSupportedException(Resources['StoreNotIRoleClaimStore'])

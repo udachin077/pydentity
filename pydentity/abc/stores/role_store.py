@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 from typing import Generic, Optional
 
 from pydentity.identity_result import IdentityResult
+from pydentity.security.claims import Claim
 from pydentity.types import TRole
 
 
@@ -114,4 +115,24 @@ class IRoleStore(Generic[TRole], ABC):
         :param role: The role whose normalized name.
         :param normalized_name: The normalized name to set.
         :return:
+        """
+
+
+class IRoleClaimStore(IRoleStore[TRole], Generic[TRole], ABC):
+    @abstractmethod
+    async def get_claims(self, role: TRole) -> list[Claim]:
+        """
+        Get the claims associated with the specified role.
+        """
+
+    @abstractmethod
+    async def add_claim(self, role: TRole, claims: Claim):
+        """
+        Add a new claim to a role.
+        """
+
+    @abstractmethod
+    async def remove_claim(self, role: TRole, claim: Claim):
+        """
+        Remove a claim from a role.
         """

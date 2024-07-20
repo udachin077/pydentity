@@ -15,4 +15,4 @@ from .user_store import (
     IUserTwoFactorStore,
     IProtectedUserStore
 )
-from .role_store import IRoleStore
+from .role_store import IRoleStore, IRoleClaimStore

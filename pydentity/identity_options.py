@@ -1,6 +1,8 @@
 import string
 from datetime import timedelta
 
+from pydentity.security.claims import ClaimTypes
+
 
 class LockoutOptions:
     """Options for configuring user lockout."""
@@ -15,6 +17,15 @@ class LockoutOptions:
         self.MAX_FAILED_ACCESS_ATTEMPTS: int = 5
         """Gets or sets the number of failed access attempts allowed before a user is locked out, assuming 
         lock out is enabled. Defaults to 5."""
+
+
+class ClaimsIdentityOptions:
+    def __init__(self):
+        self.ROLE_CLAIM_TYPE = ClaimTypes.Role
+        self.USER_NAME_CLAIM_TYPE = ClaimTypes.Name
+        self.USER_ID_CLAIM_TYPE = ClaimTypes.NameIdentifier
+        self.EMAIL_CLAIM_TYPE = ClaimTypes.Email
+        self.SECURITY_STAMP_CLAIM_TYPE = "Pydentity.SecurityStamp"
 
 
 class PasswordOptions:
@@ -104,14 +115,9 @@ class IdentityOptions:
     """Represents all the options you can use to configure the identity system."""
 
     def __init__(self):
-        """Gets or sets the ClaimsIdentityOptions for the identity system."""
+        self.ClaimsIdentity: ClaimsIdentityOptions = ClaimsIdentityOptions()
         self.Lockout: LockoutOptions = LockoutOptions()
-        """Gets or sets the LockoutOptions for the identity system."""
         self.Password: PasswordOptions = PasswordOptions()
-        """Gets or sets the PasswordOptions for the identity system."""
         self.SignIn: SignInOptions = SignInOptions()
-        """Gets or sets the SignInOptions for the identity system."""
         self.Tokens: TokenOptions = TokenOptions()
-        """Gets or sets the TokenOptions for the identity system."""
         self.User: UserOptions = UserOptions()
-        """Gets or sets the UserOptions for the identity system."""

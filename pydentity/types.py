@@ -62,9 +62,16 @@ class UserTokenProtokol(Protocol[TKey]):
     user_id: TKey
 
 
+class RoleClaimProtokol(Protocol[TKey]):
+    claim_type: Optional[str]
+    claim_value: Optional[str]
+    role_id: TKey
+
+
 TUser = TypeVar('TUser', bound=UserProtokol)
 TRole = TypeVar('TRole', bound=RoleProtokol)
 TUserRole = TypeVar('TUserRole', bound=UserRoleProtokol)
 TUserClaim = TypeVar('TUserClaim', bound=UserClaimProtokol)
 TUserLogin = TypeVar('TUserLogin', bound=UserLoginProtokol)
 TUserToken = TypeVar('TUserToken', bound=UserTokenProtokol)
+TRoleClaim = TypeVar('TRoleClaim', bound=RoleClaimProtokol)
