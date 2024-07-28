@@ -12,7 +12,7 @@ class IRoleValidator(Generic[TRole], ABC):
     """Provides an abstraction for a validating a role."""
 
     @abstractmethod
-    async def validate(self, manager: "RoleManager[TRole]", role: TRole) -> IdentityResult:
+    async def validate(self, manager: 'RoleManager[TRole]', role: TRole) -> IdentityResult:
         """
         Validates a role as an asynchronous operation.
 

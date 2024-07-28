@@ -8,11 +8,14 @@ if TYPE_CHECKING:
 
 
 class IUserConfirmation(Generic[TUser], ABC):
-    @abstractmethod
-    async def is_confirmed(self, manager: "UserManager", user: TUser) -> bool:
-        """
+    """Provides an abstraction for confirmation of user accounts."""
 
-        :param manager:
-        :param user:
-        :return:
+    @abstractmethod
+    async def is_confirmed(self, manager: 'UserManager[TUser]', user: TUser) -> bool:
+        """
+        Determines whether the specified user is confirmed.
+
+        :param manager: The :exc:`UserManager[TUser]` that can be used to retrieve user properties.
+        :param user: The user.
+        :return: Whether the user is confirmed.
         """

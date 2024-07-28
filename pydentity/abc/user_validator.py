@@ -12,7 +12,7 @@ class IUserValidator(Generic[TUser], ABC):
     """Provides an abstraction for user validation."""
 
     @abstractmethod
-    async def validate(self, manager: "UserManager[TUser]", user: TUser) -> IdentityResult:
+    async def validate(self, manager: 'UserManager[TUser]', user: TUser) -> IdentityResult:
         """
         Validates the specified user.
 

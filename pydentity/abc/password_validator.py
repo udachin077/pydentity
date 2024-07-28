@@ -12,7 +12,7 @@ class IPasswordValidator(Generic[TUser], ABC):
     """Provides an abstraction for validating passwords."""
 
     @abstractmethod
-    async def validate(self, manager: "UserManager[TUser]", password: str) -> IdentityResult:
+    async def validate(self, manager: 'UserManager[TUser]', password: str) -> IdentityResult:
         """
         Validates a password.
 

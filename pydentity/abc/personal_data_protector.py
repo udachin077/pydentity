@@ -1,17 +1,24 @@
 from abc import ABC, abstractmethod
-from typing import Any, Optional
+from typing import Any
 
 
 class IPersonalDataProtector(ABC):
-    @staticmethod
-    @abstractmethod
-    def create_protector(purpose: str, salt: Optional[str] = None) -> "IPersonalDataProtector":
-        pass
+    """Provides an abstraction used for personal data encryption."""
 
     @abstractmethod
-    def protect(self, data: Any) -> Any:
-        pass
+    def protect(self, data: Any) -> str:
+        """
+        Protect the data.
+
+        :param data: The data to protect.
+        :return: The protected data.
+        """
 
     @abstractmethod
-    def unprotect(self, data: Any) -> Any:
-        pass
+    def unprotect(self, data: str) -> Any:
+        """
+        Unprotect the data.
+
+        :param data: The data to unprotect.
+        :return: The unprotected data.
+        """

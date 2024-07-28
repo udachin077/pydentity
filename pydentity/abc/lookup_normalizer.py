@@ -1,12 +1,11 @@
 from abc import ABC, abstractmethod
-from typing import Optional
 
 
 class ILookupNormalizer(ABC):
     """Provides an abstraction for normalizing keys (emails/names) for lookup purposes."""
 
     @abstractmethod
-    def normalize_email(self, email: Optional[str]) -> Optional[str]:
+    def normalize_email(self, email: str | None) -> str | None:
         """
         Returns a normalized representation of the specified email.
 
@@ -15,7 +14,7 @@ class ILookupNormalizer(ABC):
         """
 
     @abstractmethod
-    def normalize_name(self, name: Optional[str]) -> Optional[str]:
+    def normalize_name(self, name: str | None) -> str | None:
         """
         Returns a normalized representation of the specified name.
 

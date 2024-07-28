@@ -1,9 +1,9 @@
-from .personal_data_protector import IPersonalDataProtector
-from .lookup_normalizer import ILookupNormalizer
-from .password_hasher import PasswordVerificationResult, IPasswordHasher
-from .password_validator import IPasswordValidator
-from .user_confirmation import IUserConfirmation
-from .user_claims_principal_factory import IUserClaimsPrincipalFactory
-from .token_provider import IUserTwoFactorTokenProvider
-from .user_validator import IUserValidator
-from .role_validator import IRoleValidator
+from pydentity.abc.personal_data_protector import IPersonalDataProtector
+from pydentity.abc.lookup_normalizer import ILookupNormalizer
+from pydentity.abc.password_hasher import PasswordVerificationResult, IPasswordHasher
+from pydentity.abc.user_confirmation import IUserConfirmation
+from pydentity.abc.user_claims_principal_factory import IUserClaimsPrincipalFactory
+from pydentity.abc.token_provider import IUserTwoFactorTokenProvider
+from pydentity.abc.user_validator import IUserValidator
+from pydentity.abc.role_validator import IRoleValidator
+from pydentity.abc.password_validator import IPasswordValidator

@@ -38,5 +38,5 @@ class IPasswordHasher(Generic[TUser], ABC):
         :param user: The user whose password should be verified.
         :param hashed_password: The hash password.
         :param password: The password to be verified.
-        :return: A PasswordVerificationResult indicating the result of a password hash comparison.
+        :return: A :exc:`PasswordVerificationResult` indicating the result of a password hash comparison.
         """
