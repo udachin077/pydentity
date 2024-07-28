@@ -12,9 +12,9 @@ from pydentity.abc import (
     ILookupNormalizer,
     IPasswordValidator,
     IPasswordHasher,
+    PasswordVerificationResult,
     IUserValidator,
-    IUserTwoFactorTokenProvider,
-    PasswordVerificationResult
+    IUserTwoFactorTokenProvider
 )
 from pydentity.abc.stores import (
     IUserStore,
@@ -45,19 +45,33 @@ from pydentity.security.claims import ClaimsPrincipal, Claim, ClaimTypes
 from pydentity.types import TUser
 from pydentity.user_login_info import UserLoginInfo
 
+__all__ = ('UserManager',)
+
 
 class UserManager(Generic[TUser]):
     """Provides the APIs for managing user in a persistence stores."""
 
-    RESET_PASSWORD_TOKEN_PURPOSE: Final[str] = "ResetPassword"
+    __slots__ = (
+        'store',
+        'options',
+        'password_hasher',
+        'key_normalizer',
+        'logger',
+        'password_validators',
+        'user_validators',
+        'error_describer',
+        '_token_providers',
+    )
+
+    RESET_PASSWORD_TOKEN_PURPOSE: Final[str] = 'ResetPassword'
     """The data protection purpose used for the reset password related methods."""
-    CHANGE_EMAIL_TOKEN_PURPOSE: Final[str] = "ChangeEmail"
+    CHANGE_EMAIL_TOKEN_PURPOSE: Final[str] = 'ChangeEmail'
     """The data protection purpose used for the change email methods."""
-    CHANGE_PHONE_NUMBER_TOKEN_PURPOSE: Final[str] = "ChangePhoneNumber"
+    CHANGE_PHONE_NUMBER_TOKEN_PURPOSE: Final[str] = 'ChangePhoneNumber'
     """The data protection purpose used for the change phone number methods."""
-    CONFIRM_EMAIL_TOKEN_PURPOSE: Final[str] = "EmailConfirmation"
+    CONFIRM_EMAIL_TOKEN_PURPOSE: Final[str] = 'EmailConfirmation'
     """The data protection purpose used for the email confirmation related methods."""
-    CONFIRM_PHONE_NUMBER_TOKEN_PURPOSE: Final[str] = "PhoneNumberConfirmation"
+    CONFIRM_PHONE_NUMBER_TOKEN_PURPOSE: Final[str] = 'PhoneNumberConfirmation'
     """The data protection purpose used for the phone number confirmation related methods."""
 
     def __init__(
@@ -86,7 +100,7 @@ class UserManager(Generic[TUser]):
 
         ## Example
 
-        from pydentity import PasswordValidator, UserValidator, UpperLookupNormalizer
+        from pydentity import UserManager, PasswordValidator, UserValidator, UpperLookupNormalizer
 
         manager = UserManager(
             UserStore(),
@@ -97,7 +111,7 @@ class UserManager(Generic[TUser]):
 
         """
         if store is None:
-            raise ArgumentNoneException("store")
+            raise ArgumentNoneException('store')
 
         self.store = store
         self.options: IdentityOptions = options or IdentityOptions()
@@ -109,7 +123,7 @@ class UserManager(Generic[TUser]):
         self.error_describer: IdentityErrorDescriber = errors or IdentityErrorDescriber()
         self._token_providers: dict[str, IUserTwoFactorTokenProvider[TUser]] = dict()
 
-        for provider_name, provider in self.options.Tokens.PROVIDER_MAP.items():
+        for provider_name, provider in self.options.tokens.provider_map.items():
             self.register_token_provider(provider_name, cast(IUserTwoFactorTokenProvider[TUser], provider))
 
     @property
@@ -229,9 +243,9 @@ class UserManager(Generic[TUser]):
         :return:
         """
         if not provider_name:
-            raise ArgumentNoneException("provider_name")
+            raise ArgumentNoneException('provider_name')
         if provider is None:
-            raise ArgumentNoneException("provider")
+            raise ArgumentNoneException('provider')
 
         self._token_providers[provider_name] = provider
 
@@ -261,7 +275,7 @@ class UserManager(Generic[TUser]):
 
     async def get_username(self, user: ClaimsPrincipal | TUser) -> Optional[str]:
         if user is None:
-            raise ArgumentNoneException("user")
+            raise ArgumentNoneException('user')
 
         if isinstance(user, ClaimsPrincipal):
             return user.find_first_value(ClaimTypes.Name)
@@ -277,7 +291,7 @@ class UserManager(Generic[TUser]):
         :return:
         """
         if user is None:
-            raise ArgumentNoneException("user")
+            raise ArgumentNoneException('user')
 
         await self.store.set_username(user, username)
         await self._update_security_stamp_internal(user)
@@ -305,7 +319,7 @@ class UserManager(Generic[TUser]):
 
     async def get_user_id(self, user: ClaimsPrincipal | TUser) -> Optional[str]:
         if user is None:
-            raise ArgumentNoneException("user")
+            raise ArgumentNoneException('user')
 
         if isinstance(user, ClaimsPrincipal):
             return user.find_first_value(ClaimTypes.NameIdentifier)
@@ -321,7 +335,7 @@ class UserManager(Generic[TUser]):
         :return:
         """
         if principal is None:
-            raise ArgumentNoneException("principal")
+            raise ArgumentNoneException('principal')
 
         if user_id := await self.get_user_id(principal):
             return await self.find_by_id(user_id)
@@ -346,7 +360,7 @@ class UserManager(Generic[TUser]):
         :return:
         """
         if user is None:
-            raise ArgumentNoneException("user")
+            raise ArgumentNoneException('user')
 
         if password:
             result = await self._update_password_hash(self._get_password_store(), user, password)
@@ -359,7 +373,7 @@ class UserManager(Generic[TUser]):
         if not result.succeeded:
             return result
 
-        if self.options.Lockout.ALLOWED_FOR_NEW_USER and self.supports_user_lockout:
+        if self.options.lockout.allowed_for_new_user and self.supports_user_lockout:
             await self._get_user_lockout_store().set_lockout_enabled(user, True)
 
         await self.update_normalized_username(user)
@@ -374,7 +388,7 @@ class UserManager(Generic[TUser]):
         :return:
         """
         if user is None:
-            raise ArgumentNoneException("user")
+            raise ArgumentNoneException('user')
 
         return await self._update_user(user)
 
@@ -386,7 +400,7 @@ class UserManager(Generic[TUser]):
         :return:
         """
         if user is None:
-            raise ArgumentNoneException("user")
+            raise ArgumentNoneException('user')
 
         return await self.store.delete(user)
 
@@ -398,7 +412,7 @@ class UserManager(Generic[TUser]):
         :return:
         """
         if not user_id:
-            raise ArgumentNoneException("user_id")
+            raise ArgumentNoneException('user_id')
 
         return await self.store.find_by_id(user_id)
 
@@ -410,7 +424,7 @@ class UserManager(Generic[TUser]):
         :return:
         """
         if not username:
-            raise ArgumentNoneException("username")
+            raise ArgumentNoneException('username')
 
         return await self.store.find_by_name(self._normalize_name(username))
 
@@ -445,7 +459,7 @@ class UserManager(Generic[TUser]):
         success = result != PasswordVerificationResult.Failed
 
         if not success:
-            self.logger.warning("Invalid password for user.")
+            self.logger.warning('Invalid password for user.')
 
         return success
 
@@ -457,7 +471,7 @@ class UserManager(Generic[TUser]):
         :return:
         """
         if user is None:
-            raise ArgumentNoneException("user")
+            raise ArgumentNoneException('user')
 
         return await self._get_password_store().has_password(user)
 
@@ -470,12 +484,12 @@ class UserManager(Generic[TUser]):
         :return:
         """
         if user is None:
-            raise ArgumentNoneException("user")
+            raise ArgumentNoneException('user')
 
         store = self._get_password_store()
 
         if _ := await store.get_password_hash(user):
-            self.logger.warning("User already has a password.")
+            self.logger.warning('User already has a password.')
             return IdentityResult.failed(self.error_describer.UserAlreadyHasPassword())
 
         result = await self._update_password_hash(store, user, password)
@@ -495,7 +509,7 @@ class UserManager(Generic[TUser]):
         :return:
         """
         if user is None:
-            raise ArgumentNoneException("user")
+            raise ArgumentNoneException('user')
 
         store = self._get_password_store()
 
@@ -506,7 +520,7 @@ class UserManager(Generic[TUser]):
 
             return await self._update_user(user)
 
-        self.logger.warning("Change password failed for user.")
+        self.logger.warning('Change password failed for user.')
         return IdentityResult.failed(self.error_describer.PasswordMismatch())
 
     async def remove_password(self, user: TUser) -> IdentityResult:
@@ -517,7 +531,7 @@ class UserManager(Generic[TUser]):
         :return:
         """
         if user is None:
-            raise ArgumentNoneException("user")
+            raise ArgumentNoneException('user')
 
         await self._update_password_hash(self._get_password_store(), user, None, validate_password=False)
         return await self._update_user(user)
@@ -543,12 +557,12 @@ class UserManager(Generic[TUser]):
         :return:
         """
         if user is None:
-            raise ArgumentNoneException("user")
+            raise ArgumentNoneException('user')
 
         if stamp := await self._get_security_store().get_security_stamp(user):
             return stamp
 
-        self.logger.debug("get_security_stamp for user failed because stamp was None.")
+        self.logger.debug('get_security_stamp for user failed because stamp was None.')
         raise InvalidOperationException(Resources['NullSecurityStamp'])
 
     async def update_security_stamp(self, user: TUser) -> IdentityResult:
@@ -559,7 +573,7 @@ class UserManager(Generic[TUser]):
         :return:
         """
         if user is None:
-            raise ArgumentNoneException("user")
+            raise ArgumentNoneException('user')
 
         await self._update_security_stamp_internal(user)
         return await self._update_user(user)
@@ -573,7 +587,7 @@ class UserManager(Generic[TUser]):
         """
         return await self.generate_user_token(
             user,
-            self.options.Tokens.PASSWORD_RESET_TOKEN_PROVIDER,
+            self.options.tokens.password_reset_token_provider,
             self.RESET_PASSWORD_TOKEN_PURPOSE
         )
 
@@ -587,11 +601,11 @@ class UserManager(Generic[TUser]):
         :return:
         """
         if user is None:
-            raise ArgumentNoneException("user")
+            raise ArgumentNoneException('user')
 
         if not await self.verify_user_token(
                 user,
-                self.options.Tokens.PASSWORD_RESET_TOKEN_PROVIDER,
+                self.options.tokens.password_reset_token_provider,
                 self.RESET_PASSWORD_TOKEN_PURPOSE,
                 token
         ):
@@ -612,9 +626,9 @@ class UserManager(Generic[TUser]):
         :return:
         """
         if not login_provider:
-            raise ArgumentNoneException("login_provider")
+            raise ArgumentNoneException('login_provider')
         if not provider_key:
-            raise ArgumentNoneException("provider_key")
+            raise ArgumentNoneException('provider_key')
 
         return await self._get_login_store().find_by_login(login_provider, provider_key)
 
@@ -629,11 +643,11 @@ class UserManager(Generic[TUser]):
         :return:
         """
         if user is None:
-            raise ArgumentNoneException("user")
+            raise ArgumentNoneException('user')
         if not login_provider:
-            raise ArgumentNoneException("login_provider")
+            raise ArgumentNoneException('login_provider')
         if not provider_key:
-            raise ArgumentNoneException("provider_key")
+            raise ArgumentNoneException('provider_key')
 
         store = self._get_login_store()
         await store.remove_login(user, login_provider, provider_key)
@@ -649,12 +663,12 @@ class UserManager(Generic[TUser]):
         :return:
         """
         if user is None:
-            raise ArgumentNoneException("user")
+            raise ArgumentNoneException('user')
         if login is None:
-            raise ArgumentNoneException("login")
+            raise ArgumentNoneException('login')
 
         if await self.find_by_login(login.login_provider, login.provider_key):
-            self.logger.warning("add_login for user failed because it was already associated with another user.")
+            self.logger.warning('add_login for user failed because it was already associated with another user.')
             return IdentityResult.failed(self.error_describer.LoginAlreadyAssociated())
 
         await self._get_login_store().add_login(user, login)
@@ -668,7 +682,7 @@ class UserManager(Generic[TUser]):
         :return:
         """
         if user is None:
-            raise ArgumentNoneException("user")
+            raise ArgumentNoneException('user')
 
         return await self._get_login_store().get_logins(user)
 
@@ -681,9 +695,9 @@ class UserManager(Generic[TUser]):
         :return:
         """
         if user is None:
-            raise ArgumentNoneException("user")
+            raise ArgumentNoneException('user')
         if not claims:
-            raise ArgumentNoneException("claims")
+            raise ArgumentNoneException('claims')
 
         await self._get_claim_store().add_claims(user, *claims)
         return await self._update_user(user)
@@ -698,11 +712,11 @@ class UserManager(Generic[TUser]):
         :return:
         """
         if user is None:
-            raise ArgumentNoneException("user")
+            raise ArgumentNoneException('user')
         if claim is None:
-            raise ArgumentNoneException("claim")
+            raise ArgumentNoneException('claim')
         if new_claim is None:
-            raise ArgumentNoneException("new_claim")
+            raise ArgumentNoneException('new_claim')
 
         await self._get_claim_store().replace_claim(user, claim, new_claim)
         return await self._update_user(user)
@@ -716,9 +730,9 @@ class UserManager(Generic[TUser]):
         :return:
         """
         if user is None:
-            raise ArgumentNoneException("user")
+            raise ArgumentNoneException('user')
         if not claims:
-            raise ArgumentNoneException("claims")
+            raise ArgumentNoneException('claims')
 
         await self._get_claim_store().remove_claims(user, *claims)
         return await self._update_user(user)
@@ -731,7 +745,7 @@ class UserManager(Generic[TUser]):
         :return:
         """
         if user is None:
-            raise ArgumentNoneException("user")
+            raise ArgumentNoneException('user')
 
         return await self._get_claim_store().get_claims(user)
 
@@ -753,9 +767,9 @@ class UserManager(Generic[TUser]):
         :return:
         """
         if user is None:
-            raise ArgumentNoneException("user")
+            raise ArgumentNoneException('user')
         if not roles:
-            raise ArgumentNoneException("roles")
+            raise ArgumentNoneException('roles')
 
         store = self._get_user_role_store()
 
@@ -763,7 +777,7 @@ class UserManager(Generic[TUser]):
             normalized_role = self._normalize_name(role)
 
             if await store.is_in_role(user, normalized_role):
-                self.logger.debug(f"User is already in role {role}.")
+                self.logger.debug(f'User is already in role {role}.')
                 return IdentityResult.failed(self.error_describer.UserAlreadyInRole(role))
 
             await store.add_to_role(user, normalized_role)
@@ -779,9 +793,9 @@ class UserManager(Generic[TUser]):
         :return:
         """
         if user is None:
-            raise ArgumentNoneException("user")
+            raise ArgumentNoneException('user')
         if not roles:
-            raise ArgumentNoneException("roles")
+            raise ArgumentNoneException('roles')
 
         store = self._get_user_role_store()
 
@@ -789,7 +803,7 @@ class UserManager(Generic[TUser]):
             normalized_role = self._normalize_name(role)
 
             if not await store.is_in_role(user, normalized_role):
-                self.logger.debug(f"User is not in role {role}.")
+                self.logger.debug(f'User is not in role {role}.')
                 return IdentityResult.failed(self.error_describer.UserNotInRole(role))
 
             await store.remove_from_role(user, normalized_role)
@@ -804,7 +818,7 @@ class UserManager(Generic[TUser]):
         :return:
         """
         if user is None:
-            raise ArgumentNoneException("user")
+            raise ArgumentNoneException('user')
 
         return await self._get_user_role_store().get_roles(user)
 
@@ -817,9 +831,9 @@ class UserManager(Generic[TUser]):
         :return:
         """
         if user is None:
-            raise ArgumentNoneException("user")
+            raise ArgumentNoneException('user')
         if not role:
-            raise ArgumentNoneException("role")
+            raise ArgumentNoneException('role')
 
         return await self._get_user_role_store().is_in_role(user, self._normalize_name(role))
 
@@ -831,7 +845,7 @@ class UserManager(Generic[TUser]):
         :return:
         """
         if not role:
-            raise ArgumentNoneException("role")
+            raise ArgumentNoneException('role')
 
         return await self._get_user_role_store().get_users_in_role(self._normalize_name(role))
 
@@ -843,7 +857,7 @@ class UserManager(Generic[TUser]):
         :return:
         """
         if user is None:
-            raise ArgumentNoneException("user")
+            raise ArgumentNoneException('user')
 
         return await self._get_email_store().get_email(user)
 
@@ -856,7 +870,7 @@ class UserManager(Generic[TUser]):
         :return:
         """
         if user is None:
-            raise ArgumentNoneException("user")
+            raise ArgumentNoneException('user')
 
         store = self._get_email_store()
         await store.set_email(user, email)
@@ -872,7 +886,7 @@ class UserManager(Generic[TUser]):
         :return:
         """
         if not email:
-            raise ArgumentNoneException("email")
+            raise ArgumentNoneException('email')
 
         return await self._get_email_store().find_by_email(self._normalize_email(email))
 
@@ -896,7 +910,7 @@ class UserManager(Generic[TUser]):
         """
         return await self.generate_user_token(
             user,
-            self.options.Tokens.EMAIL_CONFIRMATION_TOKEN_PROVIDER,
+            self.options.tokens.email_confirmation_token_provider,
             self.CONFIRM_EMAIL_TOKEN_PURPOSE
         )
 
@@ -909,15 +923,15 @@ class UserManager(Generic[TUser]):
         :return:
         """
         if user is None:
-            raise ArgumentNoneException("user")
+            raise ArgumentNoneException('user')
 
         if not await self.verify_user_token(
                 user,
-                self.options.Tokens.EMAIL_CONFIRMATION_TOKEN_PROVIDER,
+                self.options.tokens.email_confirmation_token_provider,
                 self.CONFIRM_EMAIL_TOKEN_PURPOSE,
                 token
         ):
-            self.logger.warning("Confirmation email for user failed with invalid token.")
+            self.logger.warning('Confirmation email for user failed with invalid token.')
             return IdentityResult.failed(self.error_describer.InvalidToken())
 
         await self._get_email_store().set_email_confirmed(user, True)
@@ -932,7 +946,7 @@ class UserManager(Generic[TUser]):
         :return:
         """
         if user is None:
-            raise ArgumentNoneException("user")
+            raise ArgumentNoneException('user')
 
         return await self._get_email_store().get_email_confirmed(user)
 
@@ -946,8 +960,8 @@ class UserManager(Generic[TUser]):
         """
         return await self.generate_user_token(
             user,
-            self.options.Tokens.CHANGE_EMAIL_TOKEN_PROVIDER,
-            f"{self.CHANGE_EMAIL_TOKEN_PURPOSE}:{new_email}"
+            self.options.tokens.change_email_token_provider,
+            f'{self.CHANGE_EMAIL_TOKEN_PURPOSE}:{new_email}'
         )
 
     async def change_email(self, user: TUser, new_email: str, token: str) -> IdentityResult:
@@ -960,15 +974,15 @@ class UserManager(Generic[TUser]):
         :return:
         """
         if user is None:
-            raise ArgumentNoneException("user")
+            raise ArgumentNoneException('user')
 
         if not await self.verify_user_token(
                 user,
-                self.options.Tokens.CHANGE_EMAIL_TOKEN_PROVIDER,
+                self.options.tokens.change_email_token_provider,
                 f'{self.CHANGE_EMAIL_TOKEN_PURPOSE}:{new_email}',
                 token
         ):
-            self.logger.warning("Change email for user failed with invalid token.")
+            self.logger.warning('Change email for user failed with invalid token.')
             return IdentityResult.failed(self.error_describer.InvalidToken())
 
         store = self._get_email_store()
@@ -985,7 +999,7 @@ class UserManager(Generic[TUser]):
         :return:
         """
         if user is None:
-            raise ArgumentNoneException("user")
+            raise ArgumentNoneException('user')
 
         return await self._get_phone_number_store().get_phone_number(user)
 
@@ -998,7 +1012,7 @@ class UserManager(Generic[TUser]):
         :return:
         """
         if user is None:
-            raise ArgumentNoneException("user")
+            raise ArgumentNoneException('user')
 
         store = self._get_phone_number_store()
         await store.set_phone_number(user, phone_number)
@@ -1014,7 +1028,7 @@ class UserManager(Generic[TUser]):
         :return:
         """
         if user is None:
-            raise ArgumentNoneException("user")
+            raise ArgumentNoneException('user')
 
         return await self._get_phone_number_store().get_phone_number_confirmed(user)
 
@@ -1027,7 +1041,7 @@ class UserManager(Generic[TUser]):
         """
         return await self.generate_user_token(
             user,
-            self.options.Tokens.PHONE_NUMBER_CONFIRMATION_TOKEN_PROVIDER,
+            self.options.tokens.phone_number_confirmation_token_provider,
             self.CONFIRM_PHONE_NUMBER_TOKEN_PURPOSE
         )
 
@@ -1040,15 +1054,15 @@ class UserManager(Generic[TUser]):
         :return:
         """
         if user is None:
-            raise ArgumentNoneException("user")
+            raise ArgumentNoneException('user')
 
         if not await self.verify_user_token(
                 user,
-                self.options.Tokens.PHONE_NUMBER_CONFIRMATION_TOKEN_PROVIDER,
+                self.options.tokens.phone_number_confirmation_token_provider,
                 self.CONFIRM_PHONE_NUMBER_TOKEN_PURPOSE,
                 token
         ):
-            self.logger.warning("Confirmation phone number for user failed with invalid token.")
+            self.logger.warning('Confirmation phone number for user failed with invalid token.')
             return IdentityResult.failed(self.error_describer.InvalidToken())
 
         await self._get_phone_number_store().set_phone_number_confirmed(user, True)
@@ -1064,8 +1078,8 @@ class UserManager(Generic[TUser]):
         """
         return await self.generate_user_token(
             user,
-            self.options.Tokens.CHANGE_PHONE_NUMBER_TOKEN_PROVIDER,
-            f"{self.CHANGE_PHONE_NUMBER_TOKEN_PURPOSE}:{phone_number}"
+            self.options.tokens.change_phone_number_token_provider,
+            f'{self.CHANGE_PHONE_NUMBER_TOKEN_PURPOSE}:{phone_number}'
         )
 
     async def change_phone_number(self, user: TUser, phone_number: str, token: str) -> IdentityResult:
@@ -1078,17 +1092,17 @@ class UserManager(Generic[TUser]):
         :return:
         """
         if user is None:
-            raise ArgumentNoneException("user")
+            raise ArgumentNoneException('user')
         if not phone_number:
-            raise ArgumentNoneException("phone_number")
+            raise ArgumentNoneException('phone_number')
 
         if not await self.verify_user_token(
                 user,
-                self.options.Tokens.CHANGE_PHONE_NUMBER_TOKEN_PROVIDER,
+                self.options.tokens.change_phone_number_token_provider,
                 f'{self.CHANGE_PHONE_NUMBER_TOKEN_PURPOSE}:{phone_number}',
                 token
         ):
-            self.logger.warning("Change phone number for user failed with invalid token.")
+            self.logger.warning('Change phone number for user failed with invalid token.')
             return IdentityResult.failed(self.error_describer.InvalidToken())
 
         store = self._get_phone_number_store()
@@ -1108,15 +1122,15 @@ class UserManager(Generic[TUser]):
         :return:
         """
         if user is None:
-            raise ArgumentNoneException("user")
+            raise ArgumentNoneException('user')
         if not token_provider:
-            raise ArgumentNoneException("token_provider")
+            raise ArgumentNoneException('token_provider')
 
         if provider := self._token_providers.get(token_provider):
             result = await provider.validate(self, purpose, token, user)
 
             if not result:
-                self.logger.error(f"Verify token failed with purpose: {purpose} for user.")
+                self.logger.error(f'Verify token failed with purpose: {purpose} for user.')
 
             return result
 
@@ -1132,9 +1146,9 @@ class UserManager(Generic[TUser]):
         :return:
         """
         if user is None:
-            raise ArgumentNoneException("user")
+            raise ArgumentNoneException('user')
         if not token_provider:
-            raise ArgumentNoneException("token_provider")
+            raise ArgumentNoneException('token_provider')
 
         if provider := self._token_providers.get(token_provider):
             return await provider.generate(self, purpose, user)
@@ -1149,7 +1163,7 @@ class UserManager(Generic[TUser]):
         :return:
         """
         if user is None:
-            raise ArgumentNoneException("user")
+            raise ArgumentNoneException('user')
 
         results = []
         for k, v in self._token_providers.items():
@@ -1168,15 +1182,15 @@ class UserManager(Generic[TUser]):
         :return:
         """
         if user is None:
-            raise ArgumentNoneException("user")
+            raise ArgumentNoneException('user')
         if not token_provider:
-            raise ArgumentNoneException("token_provider")
+            raise ArgumentNoneException('token_provider')
 
         if provider := self._token_providers.get(token_provider):
-            result = await provider.validate(self, "TwoFactor", token, user)
+            result = await provider.validate(self, 'TwoFactor', token, user)
 
             if not result:
-                self.logger.error("Verify two-factor token failed for user.")
+                self.logger.error('Verify two-factor token failed for user.')
 
             return result
 
@@ -1191,12 +1205,12 @@ class UserManager(Generic[TUser]):
         :return:
         """
         if user is None:
-            raise ArgumentNoneException("user")
+            raise ArgumentNoneException('user')
         if not token_provider:
-            raise ArgumentNoneException("token_provider")
+            raise ArgumentNoneException('token_provider')
 
         if provider := self._token_providers.get(token_provider):
-            return await provider.generate(self, "TwoFactor", user)
+            return await provider.generate(self, 'TwoFactor', user)
 
         raise NotSupportedException(Resources.FormatNoTokenProvider(token_provider))
 
@@ -1208,7 +1222,7 @@ class UserManager(Generic[TUser]):
         :return:
         """
         if user is None:
-            raise ArgumentNoneException("user")
+            raise ArgumentNoneException('user')
 
         return await self._get_two_factor_store().get_two_factor_enabled(user)
 
@@ -1221,7 +1235,7 @@ class UserManager(Generic[TUser]):
         :return:
         """
         if user is None:
-            raise ArgumentNoneException("user")
+            raise ArgumentNoneException('user')
 
         await self._get_two_factor_store().set_two_factor_enabled(user, enabled)
         await self._update_security_stamp_internal(user)
@@ -1235,7 +1249,7 @@ class UserManager(Generic[TUser]):
         :return:
         """
         if user is None:
-            raise ArgumentNoneException("user")
+            raise ArgumentNoneException('user')
 
         store = self._get_user_lockout_store()
 
@@ -1256,7 +1270,7 @@ class UserManager(Generic[TUser]):
         :return:
         """
         if user is None:
-            raise ArgumentNoneException("user")
+            raise ArgumentNoneException('user')
 
         await self._get_user_lockout_store().set_lockout_enabled(user, enabled)
         return await self._update_user(user)
@@ -1269,7 +1283,7 @@ class UserManager(Generic[TUser]):
         :return:
         """
         if user is None:
-            raise ArgumentNoneException("user")
+            raise ArgumentNoneException('user')
 
         return await self._get_user_lockout_store().get_lockout_enabled(user)
 
@@ -1282,7 +1296,7 @@ class UserManager(Generic[TUser]):
         :return:
         """
         if user is None:
-            raise ArgumentNoneException("user")
+            raise ArgumentNoneException('user')
 
         return await self._get_user_lockout_store().get_lockout_end_date(user)
 
@@ -1296,12 +1310,12 @@ class UserManager(Generic[TUser]):
         :return:
         """
         if user is None:
-            raise ArgumentNoneException("user")
+            raise ArgumentNoneException('user')
 
         store = self._get_user_lockout_store()
 
         if not await store.get_lockout_enabled(user):
-            self.logger.warning("Lockout for user failed because lockout is not enabled for this user.")
+            self.logger.warning('Lockout for user failed because lockout is not enabled for this user.')
             return IdentityResult.failed(self.error_describer.UserLockoutNotEnabled())
 
         await store.set_lockout_end_date(user, lockout_end)
@@ -1317,18 +1331,18 @@ class UserManager(Generic[TUser]):
         :return:
         """
         if user is None:
-            raise ArgumentNoneException("user")
+            raise ArgumentNoneException('user')
 
         store = self._get_user_lockout_store()
         count = await store.increment_access_failed_count(user)
 
-        if count < self.options.Lockout.MAX_FAILED_ACCESS_ATTEMPTS:
+        if count < self.options.lockout.max_failed_access_attempts:
             return await self._update_user(user)
 
-        self.logger.warning("User is locked out.")
+        self.logger.warning('User is locked out.')
         await store.set_lockout_end_date(
             user,
-            datetime.datetime.now(datetime.UTC) + self.options.Lockout.DEFAULT_LOCKOUT_TIMESPAN
+            datetime.datetime.now(datetime.UTC) + self.options.lockout.default_lockout_timespan
         )
         await store.reset_access_failed_count(user)
         return await self._update_user(user)
@@ -1341,7 +1355,7 @@ class UserManager(Generic[TUser]):
         :return:
         """
         if user is None:
-            raise ArgumentNoneException("user")
+            raise ArgumentNoneException('user')
 
         store = self._get_user_lockout_store()
 
@@ -1359,7 +1373,7 @@ class UserManager(Generic[TUser]):
         :return:
         """
         if user is None:
-            raise ArgumentNoneException("user")
+            raise ArgumentNoneException('user')
 
         return await self._get_user_lockout_store().get_access_failed_count(user)
 
@@ -1373,11 +1387,11 @@ class UserManager(Generic[TUser]):
         :return:
         """
         if user is None:
-            raise ArgumentNoneException("user")
+            raise ArgumentNoneException('user')
         if not login_provider:
-            raise ArgumentNoneException("login_provider")
+            raise ArgumentNoneException('login_provider')
         if not token_name:
-            raise ArgumentNoneException("token_name")
+            raise ArgumentNoneException('token_name')
 
         return await self._get_authentication_token_store().get_token(user, login_provider, token_name)
 
@@ -1398,11 +1412,11 @@ class UserManager(Generic[TUser]):
         :return:
         """
         if user is None:
-            raise ArgumentNoneException("user")
+            raise ArgumentNoneException('user')
         if not login_provider:
-            raise ArgumentNoneException("login_provider")
+            raise ArgumentNoneException('login_provider')
         if not token_name:
-            raise ArgumentNoneException("token_name")
+            raise ArgumentNoneException('token_name')
 
         await self._get_authentication_token_store().set_token(user, login_provider, token_name, token_value)
         return await self._validate_user(user)
@@ -1417,11 +1431,11 @@ class UserManager(Generic[TUser]):
         :return:
         """
         if user is None:
-            raise ArgumentNoneException("user")
+            raise ArgumentNoneException('user')
         if not login_provider:
-            raise ArgumentNoneException("login_provider")
+            raise ArgumentNoneException('login_provider')
         if not token_name:
-            raise ArgumentNoneException("token_name")
+            raise ArgumentNoneException('token_name')
 
         await self._get_authentication_token_store().remove_token(user, login_provider, token_name)
         return await self._update_user(user)
@@ -1434,7 +1448,7 @@ class UserManager(Generic[TUser]):
         :return:
         """
         if not user:
-            raise ArgumentNoneException("user")
+            raise ArgumentNoneException('user')
 
         return await self._get_authenticator_key_store().get_authenticator_key(user)
 
@@ -1446,7 +1460,7 @@ class UserManager(Generic[TUser]):
         :return:
         """
         if user is None:
-            raise ArgumentNoneException("user")
+            raise ArgumentNoneException('user')
 
         await self._get_authenticator_key_store().set_authenticator_key(user, self.generate_new_authenticator_key())
         await self._update_security_stamp_internal(user)
@@ -1458,7 +1472,7 @@ class UserManager(Generic[TUser]):
 
         :return:
         """
-        return pyotp.random_base32(128, list(f"{string.ascii_letters}234567"))
+        return pyotp.random_base32(128, list(f'{string.ascii_letters}234567'))
 
     async def generate_new_two_factor_recovery_codes(self, user: TUser, number: int) -> Optional[set[str]]:
         """
@@ -1469,7 +1483,7 @@ class UserManager(Generic[TUser]):
         :return:
         """
         if user is None:
-            raise ArgumentNoneException("user")
+            raise ArgumentNoneException('user')
 
         codes = set()
         for _ in range(number):
@@ -1485,11 +1499,11 @@ class UserManager(Generic[TUser]):
 
     def _create_two_factor_recovery_code(self) -> str:
         """Generate a new recovery code."""
-        return "-".join([self._get_random_recovery_code_char(), self._get_random_recovery_code_char()])
+        return '-'.join([self._get_random_recovery_code_char(), self._get_random_recovery_code_char()])
 
     def _get_random_recovery_code_char(self) -> str:  # noqa
         """"""
-        return "".join(random.choices("23456789BCDFGHJKMNPQRTVWXY", k=8))
+        return "".join(random.choices('23456789BCDFGHJKMNPQRTVWXY', k=8))
 
     async def redeem_two_factor_recovery_code(self, user: TUser, code: str) -> IdentityResult:
         """
@@ -1501,9 +1515,9 @@ class UserManager(Generic[TUser]):
         :return:
         """
         if user is None:
-            raise ArgumentNoneException("user")
+            raise ArgumentNoneException('user')
         if not code:
-            raise ArgumentNoneException("code")
+            raise ArgumentNoneException('code')
 
         if _ := await self._get_recovery_code_store().redeem_code(user, code):
             return await self._update_user(user)
@@ -1518,7 +1532,7 @@ class UserManager(Generic[TUser]):
         :return:
         """
         if user is None:
-            raise ArgumentNoneException("user")
+            raise ArgumentNoneException('user')
 
         return await self._get_recovery_code_store().count_codes(user)
 
@@ -1565,7 +1579,7 @@ class UserManager(Generic[TUser]):
                 errors.extend(result.errors)
 
         if errors:
-            self.logger.warning("User validation failed: %s." % ', '.join(e.code for e in errors))
+            self.logger.warning('User validation failed: %s.' % ', '.join(e.code for e in errors))
             return IdentityResult.failed(*errors)
 
         return IdentityResult.success()
@@ -1583,7 +1597,7 @@ class UserManager(Generic[TUser]):
                 errors.extend(result.errors)
 
         if errors:
-            self.logger.warning("User password validation failed: %s." % ', '.join(e.code for e in errors))
+            self.logger.warning('User password validation failed: %s.' % ', '.join(e.code for e in errors))
             return IdentityResult.failed(*errors)
 
         return IdentityResult.success()

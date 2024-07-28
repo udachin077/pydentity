@@ -12,10 +12,14 @@ if TYPE_CHECKING:
 
 
 class UserClaimsPrincipalFactory(IUserClaimsPrincipalFactory[TUser], Generic[TUser]):
+    """Provides methods to create a claims principal for a given user."""
+
+    __slots__ = ('user_manager', 'role_manager', 'options',)
+
     def __init__(
             self,
-            user_manager: "UserManager[TUser]",
-            role_manager: "RoleManager[TRole]",
+            user_manager: 'UserManager[TUser]',
+            role_manager: 'RoleManager[TRole]',
             options: IdentityOptions
     ):
         self.user_manager = user_manager
@@ -24,28 +28,26 @@ class UserClaimsPrincipalFactory(IUserClaimsPrincipalFactory[TUser], Generic[TUs
 
     async def create(self, user: TUser) -> ClaimsPrincipal:
         if not user:
-            raise ArgumentNoneException("user")
+            raise ArgumentNoneException('user')
 
         user_id = await self.user_manager.get_user_id(user=user)
         username = await self.user_manager.get_username(user=user)
 
         identity = ClaimsIdentity(
-            authentication_type="Pydentity.Application",
-            name_type=self.options.ClaimsIdentity.USER_NAME_CLAIM_TYPE,
-            role_type=self.options.ClaimsIdentity.ROLE_CLAIM_TYPE,
-            claims=[
-                Claim(ClaimTypes.NameIdentifier, user_id),
-                Claim(ClaimTypes.Name, username)
-            ],
+            'Pydentity.Application',
+            Claim(ClaimTypes.NameIdentifier, user_id),
+            Claim(ClaimTypes.Name, username),
+            name_claim_type=self.options.claims_identity.username_claim_type,
+            role_claim_type=self.options.claims_identity.role_claim_type,
         )
 
         if self.user_manager.supports_user_email:
             if email := await self.user_manager.get_email(user):
-                identity.add_claims(Claim(self.options.ClaimsIdentity.EMAIL_CLAIM_TYPE, email))
+                identity.add_claims(Claim(self.options.claims_identity.email_claim_type, email))
 
         if self.user_manager.supports_user_security_stamp:
             if security := await self.user_manager.get_security_stamp(user):
-                identity.add_claims(Claim(self.options.ClaimsIdentity.SECURITY_STAMP_CLAIM_TYPE, security))
+                identity.add_claims(Claim(self.options.claims_identity.security_stamp_claim_type, security))
 
         if self.user_manager.supports_user_claim:
             if claims := await self.user_manager.get_claims(user):
@@ -53,8 +55,10 @@ class UserClaimsPrincipalFactory(IUserClaimsPrincipalFactory[TUser], Generic[TUs
 
         if self.user_manager.supports_user_role:
             roles = await self.user_manager.get_roles(user)
+
             for role_name in roles:
-                identity.add_claims(Claim(self.options.ClaimsIdentity.ROLE_CLAIM_TYPE, role_name))
+                identity.add_claims(Claim(self.options.claims_identity.role_claim_type, role_name))
+
                 if self.role_manager.supports_role_claims:
                     if role := await self.role_manager.find_by_name(role_name):
                         identity.add_claims(*(await self.role_manager.get_claims(role)))

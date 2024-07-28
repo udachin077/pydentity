@@ -10,6 +10,8 @@ from pydentity.utils import is_none_or_empty
 if TYPE_CHECKING:
     from pydentity.role_manager import RoleManager
 
+__all__ = ('RoleValidator',)
+
 
 class RoleValidator(IRoleValidator[TRole], Generic[TRole]):
     """Provides the default validation of roles."""
@@ -17,15 +19,15 @@ class RoleValidator(IRoleValidator[TRole], Generic[TRole]):
     def __init__(self, errors: Optional[IdentityErrorDescriber] = None):
         """
 
-        :param errors: The IdentityErrorDescriber used to provider error messages.
+        :param errors: The :exc:`IdentityErrorDescriber` used to provider error messages.
         """
         self._describer = errors or IdentityErrorDescriber()
 
-    async def validate(self, manager: "RoleManager[TRole]", role: TRole) -> IdentityResult:
+    async def validate(self, manager: 'RoleManager[TRole]', role: TRole) -> IdentityResult:
         if manager is None:
-            raise ArgumentNoneException("manager")
+            raise ArgumentNoneException('manager')
         if role is None:
-            raise ArgumentNoneException("role")
+            raise ArgumentNoneException('role')
 
         errors = []
 
@@ -36,7 +38,7 @@ class RoleValidator(IRoleValidator[TRole], Generic[TRole]):
 
         return IdentityResult.failed(*errors)
 
-    async def _validate_role_name(self, manager: "RoleManager[TRole]", role: TRole, errors):
+    async def _validate_role_name(self, manager: 'RoleManager[TRole]', role: TRole, errors):
         role_name = await manager.get_role_name(role)
         if not is_none_or_empty(role_name):
             if owner := await manager.find_by_name(role_name):

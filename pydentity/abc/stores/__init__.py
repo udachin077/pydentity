@@ -1,4 +1,4 @@
-from .user_store import (
+from pydentity.abc.stores.user_store import (
     IUserStore,
     IUserAuthenticationTokenStore,
     IUserAuthenticatorKeyStore,
@@ -15,4 +15,4 @@ from .user_store import (
     IUserTwoFactorStore,
     IProtectedUserStore
 )
-from .role_store import IRoleStore, IRoleClaimStore
+from pydentity.abc.stores.role_store import IRoleStore, IRoleClaimStore

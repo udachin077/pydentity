@@ -11,13 +11,11 @@ class PasswordHasher(IPasswordHasher[TUser], Generic[TUser]):
 
     def __init__(self):
         from passlib.context import CryptContext
-
-        self._crypt_context = CryptContext(schemes=["bcrypt"])
+        self._crypt_context = CryptContext(schemes=['bcrypt'])
 
     def hash_password(self, user: TUser, password: str) -> str:
         if password is None:
-            raise ArgumentNoneException("password")
-
+            raise ArgumentNoneException('password')
         return self._crypt_context.hash(password)
 
     def verify_hashed_password(self, user: TUser, hashed_password: str, password: str) -> PasswordVerificationResult:
@@ -27,7 +25,5 @@ class PasswordHasher(IPasswordHasher[TUser], Generic[TUser]):
         if self._crypt_context.verify(password, hashed_password):
             if self._crypt_context.needs_update(hashed_password):
                 return PasswordVerificationResult.SuccessRehashNeeded
-
             return PasswordVerificationResult.Success
-
         return PasswordVerificationResult.Failed

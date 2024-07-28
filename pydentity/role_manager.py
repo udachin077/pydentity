@@ -1,19 +1,28 @@
 import logging
 from typing import Generic, Optional, Iterable, cast
 
-from pydentity.identity_error_describer import IdentityErrorDescriber
-from pydentity.exc import ArgumentNoneException, NotSupportedException
-from pydentity.identity_result import IdentityResult
-from pydentity.lookup_normalizer import ILookupNormalizer
-from pydentity.resources import Resources
-from pydentity.role_validator import IRoleValidator
+from pydentity.abc import IRoleValidator, ILookupNormalizer
 from pydentity.abc.stores import IRoleStore, IRoleClaimStore
+from pydentity.exc import ArgumentNoneException, NotSupportedException
+from pydentity.identity_error_describer import IdentityErrorDescriber
+from pydentity.identity_result import IdentityResult
+from pydentity.resources import Resources
 from pydentity.security.claims import Claim
 from pydentity.types import TRole
+
+__all__ = ('RoleManager',)
 
 
 class RoleManager(Generic[TRole]):
     """Provides the APIs for managing roles in a persistence store."""
+
+    __slots__ = (
+        'store',
+        'role_validators',
+        'key_normalizer',
+        'error_describer',
+        'logger',
+    )
 
     def __init__(
             self,
@@ -35,16 +44,16 @@ class RoleManager(Generic[TRole]):
 
         ## Example
 
-        from pydentity import RoleValidator, UpperLookupNormalizer
+        from pydentity import RoleManager, RoleValidator, UpperLookupNormalizer
 
         manager = RoleManager(
             RoleStore(),
             role_validators=[RoleValidator()],
-            key_normalizer=[UpperLookupNormalizer()]
+            key_normalizer=UpperLookupNormalizer()
         )
         """
         if store is None:
-            raise ArgumentNoneException("store")
+            raise ArgumentNoneException('store')
 
         self.store = store
         self.role_validators = role_validators
@@ -77,7 +86,7 @@ class RoleManager(Generic[TRole]):
         :return:
         """
         if role is None:
-            raise ArgumentNoneException("role")
+            raise ArgumentNoneException('role')
 
         result = await self._validate_role(role)
 
@@ -95,7 +104,7 @@ class RoleManager(Generic[TRole]):
         :return:
         """
         if role is None:
-            raise ArgumentNoneException("role")
+            raise ArgumentNoneException('role')
 
         return await self._update_role(role)
 
@@ -107,7 +116,7 @@ class RoleManager(Generic[TRole]):
         :return:
         """
         if role is None:
-            raise ArgumentNoneException("role")
+            raise ArgumentNoneException('role')
 
         return await self.store.delete(role)
 
@@ -119,7 +128,7 @@ class RoleManager(Generic[TRole]):
         :return:
         """
         if role_name is None:
-            raise ArgumentNoneException("role_name")
+            raise ArgumentNoneException('role_name')
 
         return await self.find_by_name(role_name) is not None
 
@@ -131,7 +140,7 @@ class RoleManager(Generic[TRole]):
         :return:
         """
         if role is None:
-            raise ArgumentNoneException("role")
+            raise ArgumentNoneException('role')
 
         return await self.store.get_role_id(role)
 
@@ -143,7 +152,7 @@ class RoleManager(Generic[TRole]):
         :return:
         """
         if role_id is None:
-            raise ArgumentNoneException("role_id")
+            raise ArgumentNoneException('role_id')
 
         return await self.store.find_by_id(role_id)
 
@@ -155,7 +164,7 @@ class RoleManager(Generic[TRole]):
         :return:
         """
         if role is None:
-            raise ArgumentNoneException("role")
+            raise ArgumentNoneException('role')
 
         return await self.store.get_role_name(role)
 
@@ -168,7 +177,7 @@ class RoleManager(Generic[TRole]):
         :return:
         """
         if role is None:
-            raise ArgumentNoneException("role")
+            raise ArgumentNoneException('role')
 
         await self.store.set_role_name(role, name)
         await self.update_normalized_role_name(role)
@@ -182,7 +191,7 @@ class RoleManager(Generic[TRole]):
         :return:
         """
         if role_name is None:
-            raise ArgumentNoneException("role_name")
+            raise ArgumentNoneException('role_name')
 
         return await self.store.find_by_name(self._normalize_key(role_name))
 
@@ -194,7 +203,7 @@ class RoleManager(Generic[TRole]):
         :return:
         """
         if role is None:
-            raise ArgumentNoneException("role")
+            raise ArgumentNoneException('role')
 
         name = await self.store.get_role_name(role)
         await self.store.set_normalized_role_name(role, self._normalize_key(name))
@@ -207,7 +216,7 @@ class RoleManager(Generic[TRole]):
         :return:
         """
         if role is None:
-            raise ArgumentNoneException("role")
+            raise ArgumentNoneException('role')
 
         return await self._get_claim_store().get_claims(role)
 
@@ -220,9 +229,9 @@ class RoleManager(Generic[TRole]):
         :return:
         """
         if role is None:
-            raise ArgumentNoneException("role")
+            raise ArgumentNoneException('role')
         if claim is None:
-            raise ArgumentNoneException("claim")
+            raise ArgumentNoneException('claim')
 
         store = self._get_claim_store()
         await store.add_claim(role, claim)
@@ -237,9 +246,9 @@ class RoleManager(Generic[TRole]):
         :return:
         """
         if role is None:
-            raise ArgumentNoneException("role")
+            raise ArgumentNoneException('role')
         if claim is None:
-            raise ArgumentNoneException("claim")
+            raise ArgumentNoneException('claim')
 
         await self._get_claim_store().remove_claim(role, claim)
         return await self._update_role(role)
@@ -261,7 +270,7 @@ class RoleManager(Generic[TRole]):
                 errors.extend(result.errors)
 
         if errors:
-            self.logger.warning("Role validation failed: %s." % ', '.join(e.code for e in errors))
+            self.logger.warning('Role validation failed: %s.' % ', '.join(e.code for e in errors))
             return IdentityResult.failed(*errors)
 
         return IdentityResult.success()

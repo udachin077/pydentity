@@ -3,8 +3,8 @@ from typing import TYPE_CHECKING, Generic, override
 
 from jose import jwt, JWTError
 
-from pydentity.exc import ArgumentNoneException
 from pydentity.abc import IUserTwoFactorTokenProvider
+from pydentity.exc import ArgumentNoneException
 from pydentity.rfc6238service import Rfc6238AuthenticationService
 from pydentity.types import TUser
 from pydentity.utils import is_none_or_empty, datetime
@@ -12,14 +12,21 @@ from pydentity.utils import is_none_or_empty, datetime
 if TYPE_CHECKING:
     from pydentity.user_manager import UserManager
 
+__all__ = (
+    'TotpSecurityStampBasedTokenProvider',
+    'EmailTokenProvider',
+    'PhoneNumberTokenProvider',
+    'DefaultTokenProvider',
+)
+
 
 class TotpSecurityStampBasedTokenProvider(IUserTwoFactorTokenProvider[TUser], Generic[TUser]):
 
     @abstractmethod
-    async def can_generate_two_factor(self, manager: "UserManager[TUser]", user: TUser) -> bool:
+    async def can_generate_two_factor(self, manager: 'UserManager[TUser]', user: TUser) -> bool:
         pass
 
-    async def generate(self, manager: "UserManager[TUser]", purpose: str, user: TUser) -> str:
+    async def generate(self, manager: 'UserManager[TUser]', purpose: str, user: TUser) -> str:
         """
         Generates a token for the specified user and purpose.
 
@@ -28,34 +35,34 @@ class TotpSecurityStampBasedTokenProvider(IUserTwoFactorTokenProvider[TUser], Ge
         and validated it with the same purpose a token with the purpose of TOTP would not pass the check even if it was
         for the same user.
 
-        :param manager: The UserManager[TUser] that can be used to retrieve user properties.
+        :param manager: The :exc:`UserManager[TUser]` that can be used to retrieve user properties.
         :param purpose: The purpose the token will be used for.
         :param user: The user a token should be generated for.
         :return:
         """
         if manager is None:
-            raise ArgumentNoneException("manager")
+            raise ArgumentNoneException('manager')
 
         security_token = await manager.create_security_token(user)
         modifier = await self.get_user_modifier(manager, purpose, user)
         return Rfc6238AuthenticationService.generate_code(
             security_token,
             modifier,
-            interval=manager.options.Tokens.TOTP_INTERVAL
+            interval=manager.options.tokens.totp_interval
         )
 
-    async def validate(self, manager: "UserManager[TUser]", purpose: str, token: str, user: TUser) -> bool:
+    async def validate(self, manager: 'UserManager[TUser]', purpose: str, token: str, user: TUser) -> bool:
         """
         Returns a flag indicating whether the specified token is valid for the given user and purpose.
 
-        :param manager: The UserManager[TUser] that can be used to retrieve user properties.
+        :param manager: The :exc:`UserManager[TUser]` that can be used to retrieve user properties.
         :param purpose: The purpose the token will be used for.
         :param token: The token to validate.
         :param user: The user a token should be validated for.
         :return:
         """
         if manager is None:
-            raise ArgumentNoneException("manager")
+            raise ArgumentNoneException('manager')
 
         security_token = await manager.create_security_token(user)
         modifier = await self.get_user_modifier(manager, purpose, user)
@@ -63,102 +70,102 @@ class TotpSecurityStampBasedTokenProvider(IUserTwoFactorTokenProvider[TUser], Ge
             security_token,
             token,
             modifier,
-            interval=manager.options.Tokens.TOTP_INTERVAL
+            interval=manager.options.tokens.totp_interval
         )
 
-    async def get_user_modifier(self, manager: "UserManager[TUser]", purpose: str, user: TUser):
+    async def get_user_modifier(self, manager: 'UserManager[TUser]', purpose: str, user: TUser) -> bytes:
         """
         Returns a constant, provider and user unique modifier used for entropy in generated tokens
         from user information.
 
-        :param manager: The UserManager[TUser] that can be used to retrieve user properties.
+        :param manager: The :exc:`UserManager[TUser]` that can be used to retrieve user properties.
         :param purpose: The purpose the token will be generated for.
         :param user: The user a token should be generated for.
         :return:
         """
         if manager is None:
-            raise ArgumentNoneException("manager")
+            raise ArgumentNoneException('manager')
 
         user_id = await manager.get_user_id(user)
-        return f"Totp:{purpose}:{user_id}".encode()
+        return f'Totp:{purpose}:{user_id}'.encode()
 
 
 class EmailTokenProvider(TotpSecurityStampBasedTokenProvider[TUser], Generic[TUser]):
     """TokenProvider that generates tokens from the user's security stamp and notifies a user via email."""
 
-    async def can_generate_two_factor(self, manager: "UserManager[TUser]", user: TUser) -> bool:
+    async def can_generate_two_factor(self, manager: 'UserManager[TUser]', user: TUser) -> bool:
         if manager is None:
-            raise ArgumentNoneException("manager")
+            raise ArgumentNoneException('manager')
 
         email = await manager.get_email(user)
         return not is_none_or_empty(email) and await manager.is_email_confirmed(user)
 
     @override
-    async def get_user_modifier(self, manager: "UserManager[TUser]", purpose: str, user: TUser):
+    async def get_user_modifier(self, manager: 'UserManager[TUser]', purpose: str, user: TUser) -> bytes:
         if manager is None:
-            raise ArgumentNoneException("manager")
+            raise ArgumentNoneException('manager')
 
         email = await manager.get_email(user)
-        return f"Email:{purpose}:{email}".encode()
+        return f'Email:{purpose}:{email}'.encode()
 
 
 class PhoneNumberTokenProvider(TotpSecurityStampBasedTokenProvider[TUser], Generic[TUser]):
     """Represents a token provider that generates tokens from a user's security stamp and
     sends them to the user via their phone number."""
 
-    async def can_generate_two_factor(self, manager: "UserManager[TUser]", user: TUser) -> bool:
+    async def can_generate_two_factor(self, manager: 'UserManager[TUser]', user: TUser) -> bool:
         if manager is None:
-            raise ArgumentNoneException("manager")
+            raise ArgumentNoneException('manager')
 
         phone_number = await manager.get_phone_number(user)
         return not is_none_or_empty(phone_number) and await manager.is_phone_number_confirmed(user)
 
     @override
-    async def get_user_modifier(self, manager: "UserManager[TUser]", purpose: str, user: TUser):
+    async def get_user_modifier(self, manager: 'UserManager[TUser]', purpose: str, user: TUser) -> bytes:
         if manager is None:
-            raise ArgumentNoneException("manager")
+            raise ArgumentNoneException('manager')
 
         phone_number = await manager.get_phone_number(user)
-        return f"PhoneNumber:{purpose}:{phone_number}".encode()
+        return f'PhoneNumber:{purpose}:{phone_number}'.encode()
 
 
 class DefaultTokenProvider(TotpSecurityStampBasedTokenProvider[TUser], Generic[TUser]):
     """Represents a token provider that generates tokens from a user's security stamp and
     sends them to the user via their phone number."""
 
-    async def can_generate_two_factor(self, manager: "UserManager[TUser]", user: TUser) -> bool:
+    async def can_generate_two_factor(self, manager: 'UserManager[TUser]', user: TUser) -> bool:
         return True
 
     @override
-    async def generate(self, manager: "UserManager[TUser]", purpose: str, user: TUser) -> str:
+    async def generate(self, manager: 'UserManager[TUser]', purpose: str, user: TUser) -> str:
         if manager is None:
-            raise ArgumentNoneException("manager")
+            raise ArgumentNoneException('manager')
         if user is None:
-            raise ArgumentNoneException("user")
+            raise ArgumentNoneException('user')
 
         stamp = await manager.get_security_stamp(user)
         user_id = await manager.get_user_id(user)
         payload = {
-            "aud": purpose,
-            "sub": user_id,
-            "exp": datetime.utcnow().add_seconds(manager.options.Tokens.TOTP_INTERVAL)
+            'aud': purpose,
+            'sub': user_id,
+            'exp': datetime.utcnow().add_seconds(manager.options.tokens.totp_interval)
         }
         return jwt.encode(payload, stamp)
 
     @override
-    async def validate(self, manager: "UserManager[TUser]", purpose: str, token: str, user: TUser) -> bool:
+    async def validate(self, manager: 'UserManager[TUser]', purpose: str, token: str, user: TUser) -> bool:
         if manager is None:
-            raise ArgumentNoneException("manager")
+            raise ArgumentNoneException('manager')
         if user is None:
-            raise ArgumentNoneException("user")
+            raise ArgumentNoneException('user')
 
-        user_id = await manager.get_user_id(user)
         stamp = await manager.get_security_stamp(user)
+        user_id = await manager.get_user_id(user)
         try:
             jwt.decode(
                 token,
                 stamp,
-                options={"require_aud": True, "require_sub": True, "require_exp": True},
+                options={'require_aud': True, 'require_sub': True, 'require_exp': True},
                 subject=user_id,
                 audience=purpose
             )

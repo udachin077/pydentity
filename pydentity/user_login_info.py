@@ -1,8 +1,5 @@
-from typing import Optional
-
-
 class UserLoginInfo:
-    def __init__(self, login_provider: str, provider_key: str, display_name: Optional[str] = None):
+    def __init__(self, login_provider: str, provider_key: str, display_name: str | None = None):
         self._login_provider = login_provider
         self._provider_key = provider_key
         self._display_name = display_name
@@ -16,5 +13,5 @@ class UserLoginInfo:
         return self._provider_key
 
     @property
-    def display_name(self) -> Optional[str]:
+    def display_name(self) -> str | None:
         return self._display_name

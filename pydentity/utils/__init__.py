@@ -1,22 +1,22 @@
 import dataclasses
+from datetime import datetime as _datetime, timedelta, UTC
 from typing import Any, Self
 from uuid import NAMESPACE_DNS, UUID, uuid5, getnode
-from datetime import datetime as __datetime, timedelta, UTC
 
 import pyotp
 
 from pydentity.exc import ArgumentNoneException
 
 __all__ = (
-    "asdict",
-    "datetime",
-    "generate_uri",
-    "get_device_uuid",
-    "is_none_or_empty",
+    'asdict',
+    'datetime',
+    'generate_uri',
+    'get_device_uuid',
+    'is_none_or_empty',
 )
 
 
-class datetime(__datetime):
+class datetime(_datetime):
     @classmethod
     def utcnow(cls) -> Self:
         return datetime.now(UTC)
@@ -62,10 +62,10 @@ def asdict(obj: Any, exclude_none: bool = True) -> dict[str, Any]:
 
 def generate_uri(secret: str, name: str, app_name: str):
     if not secret:
-        raise ArgumentNoneException("secret")
+        raise ArgumentNoneException('secret')
     if not name:
-        raise ArgumentNoneException("name")
+        raise ArgumentNoneException('name')
     if not app_name:
-        raise ArgumentNoneException("app_name")
+        raise ArgumentNoneException('app_name')
 
     return pyotp.TOTP(secret).provisioning_uri(name=name, issuer_name=app_name)

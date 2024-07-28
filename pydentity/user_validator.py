@@ -1,4 +1,3 @@
-import re
 from typing import Generic, Optional, TYPE_CHECKING
 
 from email_validator import validate_email, EmailNotValidError
@@ -13,31 +12,33 @@ from pydentity.utils import is_none_or_empty
 if TYPE_CHECKING:
     from pydentity.user_manager import UserManager
 
-email_pattern = re.compile(r"^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}$")
+__all__ = ('UserValidator',)
 
 
 class UserValidator(IUserValidator[TUser], Generic[TUser]):
     """Provides validation builders for user classes."""
 
+    __slots__ = ('_describer',)
+
     def __init__(self, errors: Optional[IdentityErrorDescriber] = None):
         """
 
-        :param errors: The IdentityErrorDescriber used to provider error messages.
+        :param errors: The :exc:`IdentityErrorDescriber` used to provider error messages.
         """
         self._describer = errors or IdentityErrorDescriber()
 
-    async def validate(self, manager: "UserManager[TUser]", user: TUser) -> IdentityResult:
+    async def validate(self, manager: 'UserManager[TUser]', user: TUser) -> IdentityResult:
         if manager is None:
-            raise ArgumentNoneException("manager")
+            raise ArgumentNoneException('manager')
         if user is None:
-            raise ArgumentNoneException("user")
+            raise ArgumentNoneException('user')
 
-        options = manager.options.User
+        options = manager.options.user
         errors = []
 
         await self._validate_username(manager, user, errors)
 
-        if options.REQUIRE_UNIQUE_EMAIL:
+        if options.require_unique_email:
             await self._validate_email(manager, user, errors)
 
         if not errors:
@@ -45,18 +46,18 @@ class UserValidator(IUserValidator[TUser], Generic[TUser]):
 
         return IdentityResult.failed(*errors)
 
-    async def _validate_username(self, manager: "UserManager[TUser]", user: TUser, errors):
+    async def _validate_username(self, manager: 'UserManager[TUser]', user: TUser, errors):
         username = await manager.get_username(user)
 
         if is_none_or_empty(username):
             errors.append(self._describer.InvalidUserName(username))
             return
 
-        options = manager.options.User
+        options = manager.options.user
 
         if (
-                not options.ALLOWED_USERNAME_CHARACTERS.isspace() and
-                any(c not in options.ALLOWED_USERNAME_CHARACTERS for c in username)
+                not options.allowed_username_characters.isspace() and
+                any(c not in options.allowed_username_characters for c in username)
         ):
             errors.append(self._describer.InvalidUserName(username))
             return
@@ -66,7 +67,7 @@ class UserValidator(IUserValidator[TUser], Generic[TUser]):
         if owner and (await manager.get_user_id(owner) != await manager.get_user_id(user)):
             errors.append(self._describer.DuplicateUserName(username))
 
-    async def _validate_email(self, manager: "UserManager[TUser]", user: TUser, errors: list):
+    async def _validate_email(self, manager: 'UserManager[TUser]', user: TUser, errors: list):
         email = await manager.get_email(user)
 
         if is_none_or_empty(email):
@@ -79,10 +80,10 @@ class UserValidator(IUserValidator[TUser], Generic[TUser]):
             errors.append(self._describer.InvalidEmail(email))
             return
 
-        options = manager.options.User
+        options = manager.options.user
 
-        if options.ALLOWED_EMAIL_DOMAINS:
-            if result.domain not in options.ALLOWED_EMAIL_DOMAINS:
+        if options.allowed_email_domains:
+            if result.domain not in options.allowed_email_domains:
                 errors.append(self._describer.InvalidDomain(result.domain))
                 return
 

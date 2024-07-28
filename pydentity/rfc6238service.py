@@ -3,6 +3,8 @@ from typing import cast
 
 import pyotp
 
+__all__ = ('Rfc6238AuthenticationService',)
+
 
 def _apply_modifier(input_: bytes, modifier_bytes: bytes = None) -> str:
     return cast(str, base64.b32encode(input_ + modifier_bytes if modifier_bytes else input_))

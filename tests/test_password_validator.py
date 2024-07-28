@@ -12,12 +12,12 @@ def validator():
 @pytest.fixture
 def options():
     options = IdentityOptions()
-    options.Password.REQUIRE_DIGIT = False
-    options.Password.REQUIRED_LENGTH = 1
-    options.Password.REQUIRED_UNIQUE_CHARS = 1
-    options.Password.REQUIRE_LOWERCASE = False
-    options.Password.REQUIRE_NON_ALPHANUMERIC = False
-    options.Password.REQUIRE_UPPERCASE = False
+    options.password.require_digit = False
+    options.password.required_length = 1
+    options.password.required_unique_chars = 1
+    options.password.required_lowercase = False
+    options.password.required_non_alphanumeric = False
+    options.password.required_uppercase = False
     return options
 
 
@@ -28,7 +28,7 @@ def options():
 })
 async def test_validate_require_digit(password, result, user_manager, validator, options):
     user_manager.options = options
-    user_manager.options.Password.REQUIRE_DIGIT = True
+    user_manager.options.password.require_digit = True
     validation_result = await validator.validate(user_manager, password)
     assert validation_result.succeeded is result
 
@@ -40,7 +40,7 @@ async def test_validate_require_digit(password, result, user_manager, validator,
 })
 async def test_validate_require_length(password, result, user_manager, validator, options):
     user_manager.options = options
-    user_manager.options.Password.REQUIRED_LENGTH = 10
+    user_manager.options.password.required_length = 10
     validation_result = await validator.validate(user_manager, password)
     assert validation_result.succeeded is result
 
@@ -52,7 +52,7 @@ async def test_validate_require_length(password, result, user_manager, validator
 })
 async def test_validate_require_unique_chars(password, result, user_manager, validator, options):
     user_manager.options = options
-    user_manager.options.Password.REQUIRED_UNIQUE_CHARS = 8
+    user_manager.options.password.required_unique_chars = 8
     validation_result = await validator.validate(user_manager, password)
     assert validation_result.succeeded is result
 
@@ -65,7 +65,7 @@ async def test_validate_require_unique_chars(password, result, user_manager, val
 })
 async def test_validate_require_lowercase(password, result, user_manager, validator, options):
     user_manager.options = options
-    user_manager.options.Password.REQUIRE_LOWERCASE = True
+    user_manager.options.password.required_lowercase = True
     validation_result = await validator.validate(user_manager, password)
     assert validation_result.succeeded is result
 
@@ -78,7 +78,7 @@ async def test_validate_require_lowercase(password, result, user_manager, valida
 })
 async def test_validate_require_uppercase(password, result, user_manager, validator, options):
     user_manager.options = options
-    user_manager.options.Password.REQUIRE_UPPERCASE = True
+    user_manager.options.password.required_uppercase = True
     validation_result = await validator.validate(user_manager, password)
     assert validation_result.succeeded is result
 
@@ -90,6 +90,6 @@ async def test_validate_require_uppercase(password, result, user_manager, valida
 })
 async def test_validate_require_non_alphanumeric(password, result, user_manager, validator, options):
     user_manager.options = options
-    user_manager.options.Password.REQUIRE_NON_ALPHANUMERIC = True
+    user_manager.options.password.required_non_alphanumeric = True
     validation_result = await validator.validate(user_manager, password)
     assert validation_result.succeeded is result

@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Generic, Optional
+from typing import TYPE_CHECKING, Generic
 
 from pydentity.exc import ArgumentNoneException
 from pydentity.identity_error_describer import IdentityErrorDescriber
@@ -9,6 +9,8 @@ from pydentity.utils import is_none_or_empty
 
 if TYPE_CHECKING:
     from pydentity.user_manager import UserManager
+
+__all__ = ('PasswordValidator',)
 
 
 def _is_lower(c: str) -> bool:
@@ -30,39 +32,41 @@ def _is_letter_or_digit(c: str) -> bool:
 class PasswordValidator(IPasswordValidator[TUser], Generic[TUser]):
     """Provides the default password policy for Identity."""
 
-    def __init__(self, errors: Optional[IdentityErrorDescriber] = None):
+    __slots__ = ('_describer',)
+
+    def __init__(self, errors: IdentityErrorDescriber = None):
         """
 
-        :param errors: The IdentityErrorDescriber used to provider error messages.
+        :param errors: The :exc:`IdentityErrorDescriber` used to provider error messages.
         """
         self._describer = errors or IdentityErrorDescriber()
 
-    async def validate(self, manager: "UserManager[TUser]", password: str) -> IdentityResult:
+    async def validate(self, manager: 'UserManager[TUser]', password: str) -> IdentityResult:
         if manager is None:
-            raise ArgumentNoneException("manager")
+            raise ArgumentNoneException('manager')
         if password is None:
-            raise ArgumentNoneException("password")
+            raise ArgumentNoneException('password')
 
-        options = manager.options.Password
+        options = manager.options.password
         errors = []
 
-        if is_none_or_empty(password) or len(password) < options.REQUIRED_LENGTH:
-            errors.append(self._describer.PasswordTooShort(options.REQUIRED_LENGTH))
+        if is_none_or_empty(password) or len(password) < options.required_length:
+            errors.append(self._describer.PasswordTooShort(options.required_length))
 
-        if options.REQUIRE_DIGIT and not any(_is_digit(c) for c in password):
+        if options.require_digit and not any(_is_digit(c) for c in password):
             errors.append(self._describer.PasswordRequiresDigit())
 
-        if options.REQUIRE_LOWERCASE and not any(_is_lower(c) for c in password):
+        if options.required_lowercase and not any(_is_lower(c) for c in password):
             errors.append(self._describer.PasswordRequiresLower())
 
-        if options.REQUIRE_UPPERCASE and not any(_is_upper(c) for c in password):
+        if options.required_uppercase and not any(_is_upper(c) for c in password):
             errors.append(self._describer.PasswordRequiresUpper())
 
-        if options.REQUIRE_NON_ALPHANUMERIC and all(_is_letter_or_digit(c) for c in password):
+        if options.required_non_alphanumeric and all(_is_letter_or_digit(c) for c in password):
             errors.append(self._describer.PasswordRequiresNonAlphanumeric())
 
-        if options.REQUIRED_UNIQUE_CHARS >= 1 and len(set(password)) < options.REQUIRED_UNIQUE_CHARS:
-            errors.append(self._describer.PasswordRequiresUniqueChars(options.REQUIRED_UNIQUE_CHARS))
+        if options.required_unique_chars >= 1 and len(set(password)) < options.required_unique_chars:
+            errors.append(self._describer.PasswordRequiresUniqueChars(options.required_unique_chars))
 
         if not errors:
             return IdentityResult.success()
