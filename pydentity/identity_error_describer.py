@@ -6,6 +6,8 @@ from pydentity.resources import Resources
 class IdentityErrorDescriber:
     """Service to enable localization for application facing identity errors."""
 
+    __slots__ = ()
+
     @staticmethod
     def DefaultError():
         return IdentityError(
