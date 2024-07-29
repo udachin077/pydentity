@@ -1,13 +1,10 @@
-from abc import abstractmethod
 from typing import TYPE_CHECKING, Generic, override
-
-from jose import jwt, JWTError
 
 from pydentity.abc import IUserTwoFactorTokenProvider
 from pydentity.exc import ArgumentNoneException
 from pydentity.rfc6238service import Rfc6238AuthenticationService
 from pydentity.types import TUser
-from pydentity.utils import is_none_or_empty, datetime
+from pydentity.utils import is_none_or_empty
 
 if TYPE_CHECKING:
     from pydentity.user_manager import UserManager
@@ -15,16 +12,14 @@ if TYPE_CHECKING:
 __all__ = (
     'TotpSecurityStampBasedTokenProvider',
     'EmailTokenProvider',
-    'PhoneNumberTokenProvider',
-    'DefaultTokenProvider',
+    'PhoneNumberTokenProvider'
 )
 
 
 class TotpSecurityStampBasedTokenProvider(IUserTwoFactorTokenProvider[TUser], Generic[TUser]):
 
-    @abstractmethod
     async def can_generate_two_factor(self, manager: 'UserManager[TUser]', user: TUser) -> bool:
-        pass
+        return True
 
     async def generate(self, manager: 'UserManager[TUser]', purpose: str, user: TUser) -> str:
         """
@@ -93,6 +88,7 @@ class TotpSecurityStampBasedTokenProvider(IUserTwoFactorTokenProvider[TUser], Ge
 class EmailTokenProvider(TotpSecurityStampBasedTokenProvider[TUser], Generic[TUser]):
     """TokenProvider that generates tokens from the user's security stamp and notifies a user via email."""
 
+    @override
     async def can_generate_two_factor(self, manager: 'UserManager[TUser]', user: TUser) -> bool:
         if manager is None:
             raise ArgumentNoneException('manager')
@@ -113,6 +109,7 @@ class PhoneNumberTokenProvider(TotpSecurityStampBasedTokenProvider[TUser], Gener
     """Represents a token provider that generates tokens from a user's security stamp and
     sends them to the user via their phone number."""
 
+    @override
     async def can_generate_two_factor(self, manager: 'UserManager[TUser]', user: TUser) -> bool:
         if manager is None:
             raise ArgumentNoneException('manager')
@@ -127,48 +124,3 @@ class PhoneNumberTokenProvider(TotpSecurityStampBasedTokenProvider[TUser], Gener
 
         phone_number = await manager.get_phone_number(user)
         return f'PhoneNumber:{purpose}:{phone_number}'.encode()
-
-
-class DefaultTokenProvider(TotpSecurityStampBasedTokenProvider[TUser], Generic[TUser]):
-    """Represents a token provider that generates tokens from a user's security stamp and
-    sends them to the user via their phone number."""
-
-    async def can_generate_two_factor(self, manager: 'UserManager[TUser]', user: TUser) -> bool:
-        return True
-
-    @override
-    async def generate(self, manager: 'UserManager[TUser]', purpose: str, user: TUser) -> str:
-        if manager is None:
-            raise ArgumentNoneException('manager')
-        if user is None:
-            raise ArgumentNoneException('user')
-
-        stamp = await manager.get_security_stamp(user)
-        user_id = await manager.get_user_id(user)
-        payload = {
-            'aud': purpose,
-            'sub': user_id,
-            'exp': datetime.utcnow().add_seconds(manager.options.tokens.totp_interval)
-        }
-        return jwt.encode(payload, stamp)
-
-    @override
-    async def validate(self, manager: 'UserManager[TUser]', purpose: str, token: str, user: TUser) -> bool:
-        if manager is None:
-            raise ArgumentNoneException('manager')
-        if user is None:
-            raise ArgumentNoneException('user')
-
-        stamp = await manager.get_security_stamp(user)
-        user_id = await manager.get_user_id(user)
-        try:
-            jwt.decode(
-                token,
-                stamp,
-                options={'require_aud': True, 'require_sub': True, 'require_exp': True},
-                subject=user_id,
-                audience=purpose
-            )
-            return True
-        except JWTError:
-            return False
