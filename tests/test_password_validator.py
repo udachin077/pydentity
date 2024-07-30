@@ -1,7 +1,20 @@
+from typing import cast
+
 import pytest
 
+from pydentity import UserManager
 from pydentity.identity_options import IdentityOptions
 from pydentity.password_validator import PasswordValidator
+
+
+class MockUserManager:
+    def __init__(self):
+        self.options = IdentityOptions()
+
+
+@pytest.fixture
+def user_manager() -> UserManager:
+    return cast(UserManager, MockUserManager())
 
 
 @pytest.fixture

@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Generic, Optional
+from typing import Generic, Optional, Any
 
 from pydentity.identity_result import IdentityResult
 from pydentity.security.claims import Claim
@@ -10,7 +10,7 @@ class IRoleStore(Generic[TRole], ABC):
     """Provides an abstraction for a storage and management of roles."""
 
     @abstractmethod
-    def create_model_from_dict(self, **kwargs):
+    def create_model_from_dict(self, **kwargs: Any) -> TRole:
         """
 
         :param kwargs:
@@ -126,13 +126,13 @@ class IRoleClaimStore(IRoleStore[TRole], Generic[TRole], ABC):
         """
 
     @abstractmethod
-    async def add_claim(self, role: TRole, claims: Claim):
+    async def add_claim(self, role: TRole, claims: Claim) -> None:
         """
         Add a new claim to a role.
         """
 
     @abstractmethod
-    async def remove_claim(self, role: TRole, claim: Claim):
+    async def remove_claim(self, role: TRole, claim: Claim) -> None:
         """
         Remove a claim from a role.
         """

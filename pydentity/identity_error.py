@@ -13,5 +13,5 @@ class IdentityError:
     def description(self) -> str:
         return self._description
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"{self.code}: {self.description}"

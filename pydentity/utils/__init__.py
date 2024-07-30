@@ -18,31 +18,31 @@ __all__ = (
 
 class datetime(_datetime):
     @classmethod
-    def utcnow(cls) -> Self:
+    def utcnow(cls) -> 'datetime':
         return datetime.now(UTC)
 
-    def add(self, _timedelta: timedelta, /) -> Self:
+    def add(self, _timedelta: timedelta, /) -> 'datetime':
         return self.__add__(_timedelta)
 
-    def add_days(self, days: float, /) -> Self:
+    def add_days(self, days: float, /) -> 'datetime':
         return self.add(timedelta(days=days))
 
-    def add_seconds(self, seconds: float, /) -> Self:
+    def add_seconds(self, seconds: float, /) -> 'datetime':
         return self.add(timedelta(seconds=seconds))
 
-    def add_microseconds(self, microseconds: float, /) -> Self:
+    def add_microseconds(self, microseconds: float, /) -> 'datetime':
         return self.add(timedelta(microseconds=microseconds))
 
-    def add_milliseconds(self, milliseconds: float, /) -> Self:
+    def add_milliseconds(self, milliseconds: float, /) -> 'datetime':
         return self.add(timedelta(milliseconds=milliseconds))
 
-    def add_minutes(self, minutes: float, /) -> Self:
+    def add_minutes(self, minutes: float, /) -> 'datetime':
         return self.add(timedelta(minutes=minutes))
 
-    def add_hours(self, hours: float, /) -> Self:
+    def add_hours(self, hours: float, /) -> 'datetime':
         return self.add(timedelta(hours=hours))
 
-    def add_weeks(self, weeks: float, /) -> Self:
+    def add_weeks(self, weeks: float, /) -> 'datetime':
         return self.add(timedelta(weeks=weeks))
 
 
@@ -60,7 +60,7 @@ def asdict(obj: Any, exclude_none: bool = True) -> dict[str, Any]:
     return dataclasses.asdict(obj)
 
 
-def generate_uri(secret: str, name: str, app_name: str):
+def generate_uri(secret: str, name: str, app_name: str) -> str:
     if not secret:
         raise ArgumentNoneException('secret')
     if not name:

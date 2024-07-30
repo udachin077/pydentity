@@ -29,7 +29,7 @@ class RoleValidator(IRoleValidator[TRole], Generic[TRole]):
         if role is None:
             raise ArgumentNoneException('role')
 
-        errors = []
+        errors = []  # type: ignore
 
         await self._validate_role_name(manager, role, errors)
 
@@ -38,11 +38,12 @@ class RoleValidator(IRoleValidator[TRole], Generic[TRole]):
 
         return IdentityResult.failed(*errors)
 
-    async def _validate_role_name(self, manager: 'RoleManager[TRole]', role: TRole, errors):
+    async def _validate_role_name(self, manager: 'RoleManager[TRole]', role: TRole, errors):  # type: ignore
         role_name = await manager.get_role_name(role)
         if not is_none_or_empty(role_name):
+            assert role_name is not None
             if owner := await manager.find_by_name(role_name):
                 if await manager.get_role_id(owner) != await manager.get_role_id(role):
                     errors.append(self._describer.DuplicateRoleName(role_name))
         else:
-            errors.append(self._describer.InvalidRoleName(role_name))
+            errors.append(self._describer.InvalidRoleName('None'))

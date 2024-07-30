@@ -7,7 +7,7 @@ class IdentityResult:
     __slots__ = ('_errors', '_succeeded',)
 
     def __init__(self, succeeded: bool, *errors: IdentityError):
-        self._errors: tuple[IdentityError, ...] | None = errors
+        self._errors: tuple[IdentityError, ...] = errors or ()
         self._succeeded = succeeded
 
     @property
@@ -22,17 +22,17 @@ class IdentityResult:
         return self._errors
 
     @staticmethod
-    def failed(*errors: IdentityError):
+    def failed(*errors: IdentityError) -> 'IdentityResult':
         """Creates an :exc:`IdentityResult` indicating a failed identity operation,
         with a list of errors if applicable."""
         return IdentityResult(False, *errors)
 
     @staticmethod
-    def success():
+    def success() -> 'IdentityResult':
         """Returns an :exc:`IdentityResult` indicating a successful identity operation."""
         return IdentityResult(True)
 
-    def __str__(self):
+    def __str__(self) -> str:
         if self.succeeded:
             return 'Succeeded.'
         return f'Failed: {",".join(e.code for e in self.errors)}.'

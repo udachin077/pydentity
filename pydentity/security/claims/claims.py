@@ -1,6 +1,6 @@
-from collections.abc import Iterable
+from collections.abc import Iterable, Generator
 from inspect import isfunction
-from typing import Any, Generator, Final, Literal, overload
+from typing import Any, Final, Literal, overload
 
 from pydentity.exc import ArgumentNoneException
 from pydentity.security.claims.claim_types import ClaimTypes
@@ -10,7 +10,7 @@ from pydentity.types import Predicate
 class Claim:
     __slots__ = ('_type', '_value')
 
-    def __init__(self, claim_type: str, claim_value: Any):
+    def __init__(self, claim_type: str, claim_value: Any) -> None:
         if not claim_type:
             raise ArgumentNoneException('claim_type')
         if not claim_value:
@@ -30,12 +30,12 @@ class Claim:
     def __repr__(self) -> str:
         return f'<{self.__class__.__name__} {self.type}:{self.value} at {id(self)}>'
 
-    def __eq__(self, other):
+    def __eq__(self, other: object) -> bool:
         if not isinstance(other, Claim):
             raise TypeError('the operand must be of type Claim')
         return self.type == other.type and self.value == other.value
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash(f'{self.type}:{self.value}')
 
 
@@ -51,7 +51,7 @@ class ClaimsIdentity:
             *claims: Claim,
             name_claim_type: str | None = None,
             role_claim_type: str | None = None
-    ):
+    ) -> None:
         self._authentication_type = authentication_type
         self._name_claim_type: str = name_claim_type or self.DEFAULT_NAME_CLAIM_TYPE
         self._role_claim_type: str = role_claim_type or self.DEFAULT_ROLE_CLAIM_TYPE
@@ -78,11 +78,11 @@ class ClaimsIdentity:
         return self._role_claim_type
 
     @property
-    def claims(self) -> Generator[Claim, Any, None]:
+    def claims(self) -> Generator[Claim]:
         for claim in self._claims:
             yield claim
 
-    def add_claims(self, *claims: Claim):
+    def add_claims(self, *claims: Claim) -> None:
         if not claims:
             raise ArgumentNoneException('claims')
         self._claims.update(claims)
@@ -93,7 +93,7 @@ class ClaimsIdentity:
         self._claims.remove(claim)
 
     @overload
-    def find_all(self, claim_type: str) -> Generator[Claim, Any, None]:
+    def find_all(self, claim_type: str, /) -> Generator[Claim]:
         """
         Retrieves a Claim`s where each Claim.type equals claim_type.
 
@@ -103,7 +103,7 @@ class ClaimsIdentity:
         ...
 
     @overload
-    def find_all(self, _match: Predicate[Claim]) -> Generator[Claim, Any, None]:
+    def find_all(self, _match: Predicate[Claim], /) -> Generator[Claim]:
         """
         Retrieves a Claim`s where each claim is matched by match.
 
@@ -112,19 +112,19 @@ class ClaimsIdentity:
         """
         ...
 
-    def find_all(self, claim_type_or_match: str | Predicate[Claim]) -> Generator[Claim, Any, None]:
+    def find_all(self, claim_type_or_match: str | Predicate[Claim]) -> Generator[Claim]:
         if isfunction(claim_type_or_match):
             _match: Predicate[Claim] = claim_type_or_match
         else:
-            def _match(x: Claim):
-                return x and x.type == claim_type_or_match
+            def _match(x: Claim) -> bool:
+                return x and x.type == claim_type_or_match  # type: ignore
 
         for claim in self.claims:
             if _match(claim):
                 yield claim
 
     @overload
-    def find_first(self, claim_type: str) -> Claim | None:
+    def find_first(self, claim_type: str, /) -> Claim | None:
         """
         Retrieves the first Claim`s where the Claim.type equals claim_type.
 
@@ -134,7 +134,7 @@ class ClaimsIdentity:
         ...
 
     @overload
-    def find_first(self, _match: Predicate[Claim]) -> Claim | None:
+    def find_first(self, _match: Predicate[Claim], /) -> Claim | None:
         """
         Retrieves the first Claim`s that is matched by match.
 
@@ -147,12 +147,14 @@ class ClaimsIdentity:
         if isfunction(claim_type_or_match):
             _match: Predicate[Claim] = claim_type_or_match
         else:
-            def _match(x: Claim):
-                return x and x.type == claim_type_or_match
+            def _match(x: Claim) -> bool:
+                return x and x.type == claim_type_or_match  # type: ignore
 
         for claim in self.claims:
             if _match(claim):
                 return claim
+
+        return None
 
     @overload
     def find_first_value(self, claim_type: str, /) -> str | None:
@@ -205,11 +207,12 @@ class ClaimsIdentity:
         if isfunction(claim_type_or_match):
             _match: Predicate[Claim] = claim_type_or_match
         else:
-            _type = claim_type_or_match
-            _value = claim_value
+            assert isinstance(claim_type_or_match, str)
+            _type: str = claim_type_or_match
+            _value: Any = claim_value
 
-            def _match(x: Claim):
-                return x and x.type.casefold() == _type.casefold() and x.value == _value
+            def _match(x: Claim) -> bool:
+                return bool(x and x.type == _type and x.value == _value)
 
         for claim in self.claims:
             if _match(claim):
@@ -234,13 +237,13 @@ class ClaimsPrincipal:
         return self.select_primary_identity(self._identities)
 
     @property
-    def claims(self) -> Generator[Claim, Any, None]:
+    def claims(self) -> Generator[Claim]:
         for identity in self._identities:
             for claim in identity.claims:
                 yield claim
 
     @overload
-    def find_all(self, claim_type: str, /) -> Generator[Claim, Any, None]:
+    def find_all(self, claim_type: str, /) -> Generator[Claim]:
         """
         Retrieves a Claim`s where each Claim.type equals claim_type.
 
@@ -250,7 +253,7 @@ class ClaimsPrincipal:
         ...
 
     @overload
-    def find_all(self, _match: Predicate[Claim], /) -> Generator[Claim, Any, None]:
+    def find_all(self, _match: Predicate[Claim], /) -> Generator[Claim]:
         """
         Retrieves a Claim`s where each claim is matched by match.
 
@@ -259,12 +262,14 @@ class ClaimsPrincipal:
         """
         ...
 
-    def find_all(self, claim_type_or_match: str | Predicate[Claim]) -> Generator[Claim, Any, None]:
+    def find_all(self, claim_type_or_match: str | Predicate[Claim]) -> Generator[Claim]:
         if isfunction(claim_type_or_match):
             _match: Predicate[Claim] = claim_type_or_match
         else:
-            def _match(x: Claim):
-                return x and x.type == claim_type_or_match
+            assert isinstance(claim_type_or_match, str)
+
+            def _match(x: Claim) -> bool:
+                return bool(x and x.type == claim_type_or_match)
 
         for identity in self._identities:
             for claim in identity.find_all(_match):
@@ -294,12 +299,14 @@ class ClaimsPrincipal:
         if isfunction(claim_type_or_match):
             _match: Predicate[Claim] = claim_type_or_match
         else:
-            def _match(x):
-                return x and x.type == claim_type_or_match
+            def _match(x: Claim) -> bool:
+                return bool(x and x.type == claim_type_or_match)
 
         for identity in self._identities:
             if claim := identity.find_first(_match):
                 return claim
+
+        return None
 
     @overload
     def find_first_value(self, claim_type: str, /) -> str | None:
@@ -324,6 +331,7 @@ class ClaimsPrincipal:
     def find_first_value(self, claim_type_or_match: str | Predicate[Claim]) -> str | None:
         if claim := self.find_first(claim_type_or_match):
             return claim.value
+        return None
 
     @overload
     def has_claim(self, _match: Predicate[Claim], /) -> bool:
@@ -350,11 +358,12 @@ class ClaimsPrincipal:
         if isfunction(claim_type_or_match):
             _match: Predicate[Claim] = claim_type_or_match
         else:
-            _type = claim_type_or_match
-            _value = claim_value
+            assert isinstance(claim_type_or_match, str)
+            _type: str = claim_type_or_match
+            _value: Any = claim_value
 
-            def _match(x: Claim):
-                return x and x.type.casefold() == _type.casefold() and x.value == _value
+            def _match(x: Claim) -> bool:
+                return bool(x and x.type == _type and x.value == _value)
 
         for identity in self._identities:
             if identity.has_claim(_match):
@@ -370,7 +379,7 @@ class ClaimsPrincipal:
             return identity
         return None
 
-    def add_identities(self, *identities: ClaimsIdentity):
+    def add_identities(self, *identities: ClaimsIdentity) -> None:
         """
         Adds ClaimsIdentity to the internal list.
 

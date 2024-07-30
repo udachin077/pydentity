@@ -1,9 +1,9 @@
-from dataclasses import field, dataclass
+from dataclasses import dataclass, field
 from uuid import uuid4
 
 import pytest
 
-from pydentity import IdentityOptions
+from pydentity import EmailTokenProvider, IdentityOptions
 
 
 @dataclass
@@ -38,5 +38,7 @@ class MockUserManager:
 
 
 @pytest.mark.asyncio
-async def test_validate():
-    assert False
+async def test_generate():
+    provider = EmailTokenProvider()
+    token = await provider.generate(MockUserManager(), 'TOTP', MockUser())
+    assert await provider.validate(MockUserManager(), 'TOTP', token, MockUser())

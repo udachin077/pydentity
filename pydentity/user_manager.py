@@ -78,12 +78,12 @@ class UserManager(Generic[TUser]):
             self,
             store: IUserStore[TUser],
             *,
-            options: IdentityOptions = None,
-            password_hasher: IPasswordHasher[TUser] = None,
+            options: Optional[IdentityOptions] = None,
+            password_hasher: Optional[IPasswordHasher[TUser]] = None,
             password_validators: Optional[Iterable[IPasswordValidator[TUser]]] = None,
             user_validators: Optional[Iterable[IUserValidator[TUser]]] = None,
             key_normalizer: Optional[ILookupNormalizer] = None,
-            errors: IdentityErrorDescriber = None,
+            errors: Optional[IdentityErrorDescriber] = None,
             logger: Optional[logging.Logger] = None
     ):
         """
@@ -110,7 +110,7 @@ class UserManager(Generic[TUser]):
         )
 
         """
-        if store is None:
+        if not store:
             raise ArgumentNoneException('store')
 
         self.store = store
@@ -426,7 +426,7 @@ class UserManager(Generic[TUser]):
         if not username:
             raise ArgumentNoneException('username')
 
-        return await self.store.find_by_name(self._normalize_name(username))
+        return await self.store.find_by_name(self._normalize_name(username))  # type: ignore
 
     async def update_normalized_username(self, user: TUser) -> None:
         """
@@ -549,7 +549,7 @@ class UserManager(Generic[TUser]):
 
         return self.password_hasher.verify_hashed_password(user, hash_, password)
 
-    async def get_security_stamp(self, user: TUser):
+    async def get_security_stamp(self, user: TUser) -> Optional[str]:
         """
         Get the security stamp for the specified user.
 
@@ -749,7 +749,7 @@ class UserManager(Generic[TUser]):
 
         return await self._get_claim_store().get_claims(user)
 
-    async def get_users_for_claim(self, claim: Claim):
+    async def get_users_for_claim(self, claim: Claim) -> list[TUser]:
         """
         Returns a list of auth from the user store who have the specified claim.
 
@@ -773,12 +773,12 @@ class UserManager(Generic[TUser]):
 
         store = self._get_user_role_store()
 
-        for role in set(roles):
-            normalized_role = self._normalize_name(role)
+        for normalized_role in set([self._normalize_name(role) for role in roles if role is not None]):
+            assert normalized_role is not None
 
             if await store.is_in_role(user, normalized_role):
-                self.logger.debug(f'User is already in role {role}.')
-                return IdentityResult.failed(self.error_describer.UserAlreadyInRole(role))
+                self.logger.debug(f'User is already in role {normalized_role}.')
+                return IdentityResult.failed(self.error_describer.UserAlreadyInRole(normalized_role))
 
             await store.add_to_role(user, normalized_role)
 
@@ -799,12 +799,12 @@ class UserManager(Generic[TUser]):
 
         store = self._get_user_role_store()
 
-        for role in set(roles):
-            normalized_role = self._normalize_name(role)
+        for normalized_role in set([self._normalize_name(role) for role in roles if role is not None]):
+            assert normalized_role is not None
 
             if not await store.is_in_role(user, normalized_role):
-                self.logger.debug(f'User is not in role {role}.')
-                return IdentityResult.failed(self.error_describer.UserNotInRole(role))
+                self.logger.debug(f'User is not in role {normalized_role}.')
+                return IdentityResult.failed(self.error_describer.UserNotInRole(normalized_role))
 
             await store.remove_from_role(user, normalized_role)
 
@@ -835,7 +835,7 @@ class UserManager(Generic[TUser]):
         if not role:
             raise ArgumentNoneException('role')
 
-        return await self._get_user_role_store().is_in_role(user, self._normalize_name(role))
+        return await self._get_user_role_store().is_in_role(user, self._normalize_name(role))  # type: ignore
 
     async def get_users_in_role(self, role: str) -> list[TUser]:
         """
@@ -847,7 +847,7 @@ class UserManager(Generic[TUser]):
         if not role:
             raise ArgumentNoneException('role')
 
-        return await self._get_user_role_store().get_users_in_role(self._normalize_name(role))
+        return await self._get_user_role_store().get_users_in_role(self._normalize_name(role))  # type: ignore
 
     async def get_email(self, user: TUser) -> Optional[str]:
         """
@@ -888,7 +888,7 @@ class UserManager(Generic[TUser]):
         if not email:
             raise ArgumentNoneException('email')
 
-        return await self._get_email_store().find_by_email(self._normalize_email(email))
+        return await self._get_email_store().find_by_email(self._normalize_email(email))  # type: ignore
 
     async def update_normalized_email(self, user: TUser) -> None:
         """
@@ -991,7 +991,7 @@ class UserManager(Generic[TUser]):
         await self._update_security_stamp_internal(user)
         return await self._update_user(user)
 
-    async def get_phone_number(self, user: TUser) -> str:
+    async def get_phone_number(self, user: TUser) -> Optional[str]:
         """
         Gets the telephone number, if any, for the specified user.
 
@@ -1550,10 +1550,14 @@ class UserManager(Generic[TUser]):
             user: TUser,
             new_password: Optional[str],
             *,
-            validate_password=True
+            validate_password: bool = True
     ) -> IdentityResult:
         """Updates a user's password hash."""
         if validate_password:
+            if not new_password:
+                raise ArgumentNoneException('new_password')
+            assert new_password is not None
+
             validate = await self._validate_password(user, new_password)
             if not validate.succeeded:
                 return validate
@@ -1571,16 +1575,16 @@ class UserManager(Generic[TUser]):
         if user.security_stamp is None:
             raise InvalidOperationException(Resources['NullSecurityStamp'])
 
-        errors = []
+        if self.user_validators:
+            errors = []  # type: ignore
+            for uv in self.user_validators:
+                result = await uv.validate(self, user)
+                if not result.succeeded:
+                    errors.extend(result.errors)  # type: ignore
 
-        for uv in self.user_validators:
-            result = await uv.validate(self, user)
-            if not result.succeeded:
-                errors.extend(result.errors)
-
-        if errors:
-            self.logger.warning('User validation failed: %s.' % ', '.join(e.code for e in errors))
-            return IdentityResult.failed(*errors)
+            if errors:
+                self.logger.warning('User validation failed: %s.' % ', '.join(e.code for e in errors))
+                return IdentityResult.failed(*errors)
 
         return IdentityResult.success()
 
@@ -1589,27 +1593,29 @@ class UserManager(Generic[TUser]):
         Should return IdentityResult.Success if validation is successful.
         This is called before updating the password hash.
         """
-        errors = []
+        if self.password_validators:
+            errors = []  # type: ignore
+            for pv in self.password_validators:
+                result = await pv.validate(self, password)
+                if not result.succeeded:
+                    errors.extend(result.errors)  # type: ignore
 
-        for pv in self.password_validators:
-            result = await pv.validate(self, password)
-            if not result.succeeded:
-                errors.extend(result.errors)
-
-        if errors:
-            self.logger.warning('User password validation failed: %s.' % ', '.join(e.code for e in errors))
-            return IdentityResult.failed(*errors)
+            if errors:
+                self.logger.warning('User password validation failed: %s.' % ', '.join(e.code for e in errors))
+                return IdentityResult.failed(*errors)
 
         return IdentityResult.success()
 
-    async def create_security_token(self, user) -> bytes:
+    async def create_security_token(self, user: TUser) -> bytes:
         """
         Creates bytes to use as a security token from the user's security stamp.
 
         :param user:
         :return:
         """
-        return (await self.get_security_stamp(user)).encode()
+        if stamp := await self.get_security_stamp(user):
+            return stamp.encode()
+        raise ArgumentNoneException('security_stamp')
 
     async def _update_security_stamp_internal(self, user: TUser) -> None:
         """"""
@@ -1634,7 +1640,7 @@ class UserManager(Generic[TUser]):
             return cast(IUserAuthenticationTokenStore[TUser], self.store)
         raise NotSupportedException(Resources['StoreNotIUserAuthenticationTokenStore'])
 
-    def _get_authenticator_key_store(self) -> Optional[IUserAuthenticatorKeyStore[TUser]]:
+    def _get_authenticator_key_store(self) -> IUserAuthenticatorKeyStore[TUser]:
         if self.supports_user_authenticator_key:
             return cast(IUserAuthenticatorKeyStore[TUser], self.store)
         raise NotSupportedException(Resources['StoreNotIUserAuthenticatorKeyStore'])

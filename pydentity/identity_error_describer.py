@@ -9,182 +9,182 @@ class IdentityErrorDescriber:
     __slots__ = ()
 
     @staticmethod
-    def DefaultError():
+    def DefaultError() -> IdentityError:
         return IdentityError(
             code="DefaultError",
             description=Resources.DefaultError
         )
 
     @staticmethod
-    def DuplicateEmail(email: str):
+    def DuplicateEmail(email: str) -> IdentityError:
         return IdentityError(
             code="DuplicateEmail",
             description=Resources.DuplicateEmail.format(email)
         )
 
     @staticmethod
-    def DuplicateRoleName(name: str):
+    def DuplicateRoleName(name: str) -> IdentityError:
         return IdentityError(
             code="DuplicateRoleName",
             description=Resources.DuplicateRoleName.format(name)
         )
 
     @staticmethod
-    def DuplicateUserName(name: str):
+    def DuplicateUserName(name: str) -> IdentityError:
         return IdentityError(
             code="DuplicateUserName",
             description=Resources.DuplicateUserName.format(name)
         )
 
     @staticmethod
-    def InvalidEmail(email: str):
+    def InvalidEmail(email: str) -> IdentityError:
         return IdentityError(
             code="InvalidEmail",
             description=Resources.InvalidEmail.format(email)
         )
 
     @staticmethod
-    def InvalidRoleName(name: str):
+    def InvalidRoleName(name: str) -> IdentityError:
         return IdentityError(
             code="InvalidRoleName",
             description=Resources.InvalidRoleName.format(name)
         )
 
     @staticmethod
-    def InvalidDomain(domain: str):
+    def InvalidDomain(domain: str) -> IdentityError:
         return IdentityError(
             code="InvalidDomain",
             description=Resources.InvalidDomain.format(domain)
         )
 
     @staticmethod
-    def InvalidToken():
+    def InvalidToken() -> IdentityError:
         return IdentityError(
             code="InvalidToken",
             description=Resources.InvalidToken
         )
 
     @staticmethod
-    def InvalidUserName(name: str):
+    def InvalidUserName(name: str) -> IdentityError:
         return IdentityError(
             code="InvalidUserName",
             description=Resources.InvalidUserName.format(name)
         )
 
     @staticmethod
-    def LoginAlreadyAssociated():
+    def LoginAlreadyAssociated() -> IdentityError:
         return IdentityError(
             code="InvalidUserName",
             description=Resources.LoginAlreadyAssociated
         )
 
     @staticmethod
-    def NullSecurityStamp():
+    def NullSecurityStamp() -> IdentityError:
         return IdentityError(
             code="NullSecurityStamp",
             description=Resources.NullSecurityStamp
         )
 
     @staticmethod
-    def PasswordMismatch():
+    def PasswordMismatch() -> IdentityError:
         return IdentityError(
             code="PasswordMismatch",
             description=Resources.PasswordMismatch
         )
 
     @staticmethod
-    def PasswordRequiresDigit():
+    def PasswordRequiresDigit() -> IdentityError:
         return IdentityError(
             code="PasswordRequiresDigit",
             description=Resources.PasswordRequiresDigit
         )
 
     @staticmethod
-    def PasswordRequiresLower():
+    def PasswordRequiresLower() -> IdentityError:
         return IdentityError(
             code="PasswordRequiresLower",
             description=Resources.PasswordRequiresLower
         )
 
     @staticmethod
-    def PasswordRequiresNonAlphanumeric():
+    def PasswordRequiresNonAlphanumeric() -> IdentityError:
         return IdentityError(
             code="PasswordRequiresNonAlphanumeric",
             description=Resources.PasswordRequiresNonAlphanumeric
         )
 
     @staticmethod
-    def PasswordRequiresUpper():
+    def PasswordRequiresUpper() -> IdentityError:
         return IdentityError(
             code="PasswordRequiresUpper",
             description=Resources.PasswordRequiresUpper
         )
 
     @staticmethod
-    def PasswordTooShort(length: int):
+    def PasswordTooShort(length: int) -> IdentityError:
         return IdentityError(
             code="PasswordTooShort",
             description=Resources.PasswordTooShort.format(length)
         )
 
     @staticmethod
-    def PasswordRequiresUniqueChars(unique_chars: int):
+    def PasswordRequiresUniqueChars(unique_chars: int) -> IdentityError:
         return IdentityError(
             code="PasswordRequiresUniqueChars",
             description=Resources.PasswordRequiresUniqueChars.format(unique_chars)
         )
 
     @staticmethod
-    def RoleNotFound(name: str):
+    def RoleNotFound(name: str) -> IdentityError:
         return IdentityError(
             code="RoleNotFound",
             description=Resources.RoleNotFound.format(name)
         )
 
     @staticmethod
-    def RecoveryCodeRedemptionFailed():
+    def RecoveryCodeRedemptionFailed() -> IdentityError:
         return IdentityError(
             code="RecoveryCodeRedemptionFailed",
             description=Resources.RecoveryCodeRedemptionFailed
         )
 
     @staticmethod
-    def UserAlreadyHasPassword():
+    def UserAlreadyHasPassword() -> IdentityError:
         return IdentityError(
             code="UserAlreadyHasPassword",
             description=Resources.UserAlreadyHasPassword
         )
 
     @staticmethod
-    def UserAlreadyInRole(name: str):
+    def UserAlreadyInRole(name: str) -> IdentityError:
         return IdentityError(
             code="UserAlreadyInRole",
             description=Resources.UserAlreadyInRole.format(name)
         )
 
     @staticmethod
-    def UserLockedOut():
+    def UserLockedOut() -> IdentityError:
         return IdentityError(
             code="UserLockedOut",
             description=Resources.UserLockedOut
         )
 
     @staticmethod
-    def UserLockoutNotEnabled():
+    def UserLockoutNotEnabled() -> IdentityError:
         return IdentityError(
             code="UserLockoutNotEnabled",
             description=Resources.UserLockoutNotEnabled
         )
 
     @staticmethod
-    def UserNameNotFound(name: str):
+    def UserNameNotFound(name: str) -> IdentityError:
         return IdentityError(
             code="UserNameNotFound",
             description=Resources.UserNameNotFound.format(name)
         )
 
     @staticmethod
-    def UserNotInRole(name: str):
+    def UserNotInRole(name: str) -> IdentityError:
         return IdentityError(
             code="UserNotInRole",
             description=Resources.UserNotInRole.format(name)

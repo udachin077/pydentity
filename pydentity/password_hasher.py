@@ -9,7 +9,7 @@ from pydentity.utils import is_none_or_empty
 class PasswordHasher(IPasswordHasher[TUser], Generic[TUser]):
     """Implements the standard password hashing."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         from passlib.context import CryptContext
         self._crypt_context = CryptContext(schemes=['bcrypt'])
 

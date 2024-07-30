@@ -30,7 +30,7 @@ class RoleManager(Generic[TRole]):
             *,
             role_validators: Optional[Iterable[IRoleValidator[TRole]]] = None,
             key_normalizer: Optional[ILookupNormalizer] = None,
-            errors: IdentityErrorDescriber = None,
+            errors: Optional[IdentityErrorDescriber] = None,
             logger: Optional[logging.Logger] = None
     ):
         """
@@ -168,7 +168,7 @@ class RoleManager(Generic[TRole]):
 
         return await self.store.get_role_name(role)
 
-    async def set_role_name(self, role: TRole, name: Optional[str] = None):
+    async def set_role_name(self, role: TRole, name: Optional[str] = None) -> IdentityResult:
         """
         Sets the name of the specified role.
 
@@ -190,10 +190,10 @@ class RoleManager(Generic[TRole]):
         :param role_name: The name of the role to be returned.
         :return:
         """
-        if role_name is None:
+        if not role_name:
             raise ArgumentNoneException('role_name')
 
-        return await self.store.find_by_name(self._normalize_key(role_name))
+        return await self.store.find_by_name(self._normalize_key(role_name))  # type: ignore
 
     async def update_normalized_role_name(self, role: TRole) -> None:
         """
@@ -261,17 +261,16 @@ class RoleManager(Generic[TRole]):
         :param role:
         :return:
         """
-        errors = []
+        if self.role_validators:
+            errors = []  # type: ignore
+            for rv in self.role_validators:
+                result = await rv.validate(self, role)
+                if not result.succeeded:
+                    errors.extend(result.errors)  # type: ignore
 
-        for rv in self.role_validators:
-            result = await rv.validate(self, role)
-
-            if not result.succeeded:
-                errors.extend(result.errors)
-
-        if errors:
-            self.logger.warning('Role validation failed: %s.' % ', '.join(e.code for e in errors))
-            return IdentityResult.failed(*errors)
+            if errors:
+                self.logger.warning('Role validation failed: %s.' % ', '.join(e.code for e in errors))
+                return IdentityResult.failed(*errors)
 
         return IdentityResult.success()
 

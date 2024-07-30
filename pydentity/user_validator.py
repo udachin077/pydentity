@@ -34,7 +34,7 @@ class UserValidator(IUserValidator[TUser], Generic[TUser]):
             raise ArgumentNoneException('user')
 
         options = manager.options.user
-        errors = []
+        errors = []  # type: ignore
 
         await self._validate_username(manager, user, errors)
 
@@ -46,13 +46,14 @@ class UserValidator(IUserValidator[TUser], Generic[TUser]):
 
         return IdentityResult.failed(*errors)
 
-    async def _validate_username(self, manager: 'UserManager[TUser]', user: TUser, errors):
+    async def _validate_username(self, manager: 'UserManager[TUser]', user: TUser, errors: list) -> None:
         username = await manager.get_username(user)
 
         if is_none_or_empty(username):
-            errors.append(self._describer.InvalidUserName(username))
+            errors.append(self._describer.InvalidUserName('None'))
             return
 
+        assert username is not None
         options = manager.options.user
 
         if (
@@ -67,13 +68,14 @@ class UserValidator(IUserValidator[TUser], Generic[TUser]):
         if owner and (await manager.get_user_id(owner) != await manager.get_user_id(user)):
             errors.append(self._describer.DuplicateUserName(username))
 
-    async def _validate_email(self, manager: 'UserManager[TUser]', user: TUser, errors: list):
+    async def _validate_email(self, manager: 'UserManager[TUser]', user: TUser, errors: list) -> None:
         email = await manager.get_email(user)
 
         if is_none_or_empty(email):
-            errors.append(self._describer.InvalidEmail(email))
+            errors.append(self._describer.InvalidEmail('None'))
             return
 
+        assert email is not None
         try:
             result = validate_email(email, check_deliverability=False)
         except EmailNotValidError:

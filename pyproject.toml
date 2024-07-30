@@ -7,11 +7,19 @@ license = "MIT"
 
 [tool.poetry.dependencies]
 python = "^3.12"
+bcrypt = "4.2.0"
+email-validator = "2.2.0"
+itsdangerous = "2.2.0"
+passlib = "1.7.4"
+pyotp = "2.9.0"
+
+
 
 [tool.poetry.dev-dependencies]
 pytest = "*"
 pytest-asyncio = "*"
-pydentity-db-sqlalchemy = { git = "https://github.com/udachin077/pydentity-db-sqlalchemy.git" }
+mypy = "1.11.0"
+types-passlib = "1.7.7.20240327"
 
 
 [build-system]

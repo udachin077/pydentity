@@ -15,7 +15,7 @@ class LockoutOptions:
         'max_failed_access_attempts',
     )
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.allowed_for_new_user: bool = True
         """Gets or sets a flag indicating whether a new user can be locked out. Defaults to `True`."""
         self.default_lockout_timespan: timedelta = timedelta(minutes=5)
@@ -36,7 +36,7 @@ class ClaimsIdentityOptions:
         'security_stamp_claim_type',
     )
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.role_claim_type = ClaimTypes.Role
         """Gets or sets the :exc:`ClaimTypes` used for a Role claim. 
         Defaults to :exc:`ClaimTypes.Role`."""
@@ -66,7 +66,7 @@ class PasswordOptions:
         'required_uppercase',
     )
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.require_digit: bool = True
         """Gets or sets a flag indicating if passwords must contain a digit. Defaults to `True`."""
         self.required_length: int = 8
@@ -90,7 +90,7 @@ class SignInOptions:
         'required_confirmed_account',
     )
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.required_confirmed_email: bool = False
         """Gets or sets a flag indicating whether a confirmed email address is required to sign in. 
         Defaults to `False`."""
@@ -116,7 +116,7 @@ class TokenOptions:
         'provider_map',
     )
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.authenticator_token_provider: str = "Authenticator"
         """Gets or sets the token provider used to validate two factor sign ins with an authenticator."""
         self.change_email_token_provider: str = "Email"
@@ -131,7 +131,7 @@ class TokenOptions:
         """Gets or sets the token provider used to generate tokens used in password reset emails."""
         self.totp_interval = 30
         """Gets or sets the totp interval. Defaults to `30` seconds."""
-        self.provider_map: dict[str, IUserTwoFactorTokenProvider[TUser]] = {}
+        self.provider_map: dict[str, IUserTwoFactorTokenProvider[TUser]] = {}  # type: ignore
 
 
 class UserOptions:
@@ -143,7 +143,7 @@ class UserOptions:
         'allowed_email_domains',
     )
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.allowed_username_characters: str = ''.join([string.ascii_letters, string.digits, '@-_.'])
         """Gets or sets the list of allowed characters in the username used to validate user names. 
         Defaults to `abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@.-_`"""
@@ -160,7 +160,7 @@ class StoreOptions:
 
     __slots__ = ('protect_personal_data',)
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.protect_personal_data: bool = False
         """If set to True, the store must protect all personally identifying data for a user. 
         This will be enforced by requiring the store to implement :exc:`IProtectedUserStore[TUser]`."""
@@ -178,7 +178,7 @@ class IdentityOptions:
         'user',
     )
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.claims_identity: ClaimsIdentityOptions = ClaimsIdentityOptions()
         """Gets or sets the :exc:`ClaimsIdentityOptions` for the identity system."""
         self.lockout: LockoutOptions = LockoutOptions()

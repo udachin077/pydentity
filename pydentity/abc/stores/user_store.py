@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from datetime import datetime
-from typing import Generic, Optional
+from typing import Generic, Optional, Any
 
 from pydentity.identity_result import IdentityResult
 from pydentity.security.claims import Claim
@@ -12,7 +12,7 @@ class IUserStore(Generic[TUser], ABC):
     """Provides an abstraction for a store which manages user accounts."""
 
     @abstractmethod
-    def create_model_from_dict(self, **kwargs) -> TUser:
+    def create_model_from_dict(self, **kwargs: Any) -> TUser:
         """
 
         :param kwargs:
@@ -444,7 +444,7 @@ class IUserPasswordStore(IUserStore[TUser], Generic[TUser], ABC):
         """
 
     @abstractmethod
-    async def set_password_hash(self, user: TUser, password_hash: str) -> None:
+    async def set_password_hash(self, user: TUser, password_hash: str | None) -> None:
         """
          Sets the password hash for the specified user.
 

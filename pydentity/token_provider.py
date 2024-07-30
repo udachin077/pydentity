@@ -61,12 +61,12 @@ class TotpSecurityStampBasedTokenProvider(IUserTwoFactorTokenProvider[TUser], Ge
 
         security_token = await manager.create_security_token(user)
         modifier = await self.get_user_modifier(manager, purpose, user)
-        return security_token and Rfc6238AuthenticationService.validate_code(
+        return bool(security_token and Rfc6238AuthenticationService.validate_code(
             security_token,
             token,
             modifier,
             interval=manager.options.tokens.totp_interval
-        )
+        ))
 
     async def get_user_modifier(self, manager: 'UserManager[TUser]', purpose: str, user: TUser) -> bytes:
         """

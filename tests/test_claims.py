@@ -61,6 +61,7 @@ def test_identity_find_first_value(claim_type, result, identity):
     assert bool(identity.find_first_value(claim_type)) is result
 
 
+
 @pytest.mark.parametrize("claim_type, claim_value, result", {
     (ClaimTypes.Name, _User.username, True,),
     (ClaimTypes.Name, "Undefined", False,),
