@@ -6,7 +6,7 @@ class IdentityResult:
 
     __slots__ = ('_errors', '_succeeded',)
 
-    def __init__(self, succeeded: bool, *errors: IdentityError):
+    def __init__(self, succeeded: bool, *errors: IdentityError) -> None:
         self._errors: tuple[IdentityError, ...] = errors or ()
         self._succeeded = succeeded
 

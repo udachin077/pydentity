@@ -1,4 +1,4 @@
-from typing import Generic, Optional, TYPE_CHECKING
+from typing import Generic, TYPE_CHECKING
 
 from email_validator import validate_email, EmailNotValidError
 
@@ -20,7 +20,7 @@ class UserValidator(IUserValidator[TUser], Generic[TUser]):
 
     __slots__ = ('_describer',)
 
-    def __init__(self, errors: Optional[IdentityErrorDescriber] = None):
+    def __init__(self, errors: IdentityErrorDescriber | None = None) -> None:
         """
 
         :param errors: The :exc:`IdentityErrorDescriber` used to provider error messages.

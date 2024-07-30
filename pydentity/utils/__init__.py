@@ -1,6 +1,6 @@
 import dataclasses
 from datetime import datetime as _datetime, timedelta, UTC
-from typing import Any, Self
+from typing import Any
 from uuid import NAMESPACE_DNS, UUID, uuid5, getnode
 
 import pyotp

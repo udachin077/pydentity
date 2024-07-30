@@ -34,7 +34,7 @@ class PasswordValidator(IPasswordValidator[TUser], Generic[TUser]):
 
     __slots__ = ('_describer',)
 
-    def __init__(self, errors: IdentityErrorDescriber | None = None):
+    def __init__(self, errors: IdentityErrorDescriber | None = None) -> None:
         """
 
         :param errors: The :exc:`IdentityErrorDescriber` used to provider error messages.

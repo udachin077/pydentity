@@ -1,4 +1,4 @@
-from typing import Generic, Optional, TYPE_CHECKING
+from typing import Generic, TYPE_CHECKING
 
 from pydentity.abc import IRoleValidator
 from pydentity.exc import ArgumentNoneException
@@ -16,7 +16,7 @@ __all__ = ('RoleValidator',)
 class RoleValidator(IRoleValidator[TRole], Generic[TRole]):
     """Provides the default validation of roles."""
 
-    def __init__(self, errors: Optional[IdentityErrorDescriber] = None):
+    def __init__(self, errors: IdentityErrorDescriber | None = None) -> None:
         """
 
         :param errors: The :exc:`IdentityErrorDescriber` used to provider error messages.

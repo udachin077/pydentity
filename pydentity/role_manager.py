@@ -32,7 +32,7 @@ class RoleManager(Generic[TRole]):
             key_normalizer: Optional[ILookupNormalizer] = None,
             errors: Optional[IdentityErrorDescriber] = None,
             logger: Optional[logging.Logger] = None
-    ):
+    ) -> None:
         """
         Constructs a new instance of RoleManager[TRole].
 

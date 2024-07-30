@@ -85,7 +85,7 @@ class UserManager(Generic[TUser]):
             key_normalizer: Optional[ILookupNormalizer] = None,
             errors: Optional[IdentityErrorDescriber] = None,
             logger: Optional[logging.Logger] = None
-    ):
+    ) -> None:
         """
         Constructs a new instance of UserManager[TUser].
 

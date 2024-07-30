@@ -21,7 +21,7 @@ class UserClaimsPrincipalFactory(IUserClaimsPrincipalFactory[TUser], Generic[TUs
             user_manager: 'UserManager[TUser]',
             role_manager: 'RoleManager[TRole]',
             options: IdentityOptions
-    ):
+    ) -> None:
         self.user_manager = user_manager
         self.role_manager = role_manager
         self.options = options

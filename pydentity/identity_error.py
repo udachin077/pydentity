@@ -1,7 +1,7 @@
 class IdentityError:
     __slots__ = ('_code', '_description',)
 
-    def __init__(self, code: str, description: str):
+    def __init__(self, code: str, description: str) -> None:
         self._code = code
         self._description = description
 

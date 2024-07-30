@@ -11,7 +11,7 @@ class DefaultPersonalDataProtector(IPersonalDataProtector):
 
     __slots__ = ('_serializer',)
 
-    def __init__(self, purpose: str, salt: str | None = None):
+    def __init__(self, purpose: str, salt: str | None = None) -> None:
         if not purpose:
             raise ArgumentNoneException('purpose')
 

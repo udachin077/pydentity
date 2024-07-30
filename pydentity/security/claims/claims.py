@@ -225,7 +225,7 @@ class ClaimsIdentity:
 
 
 class ClaimsPrincipal:
-    def __init__(self, *identities: ClaimsIdentity):
+    def __init__(self, *identities: ClaimsIdentity) -> None:
         self._identities: list[ClaimsIdentity] = list(identities) if identities else []
 
     @property
