@@ -5,6 +5,8 @@ from itsdangerous import URLSafeSerializer, BadSignature
 from pydentity.abc import IPersonalDataProtector
 from pydentity.exc import DataProtectorError, ArgumentNoneException
 
+__all__ = ('DefaultPersonalDataProtector',)
+
 
 class DefaultPersonalDataProtector(IPersonalDataProtector):
     """Default implementation of :exc:`IPersonalDataProtector`."""

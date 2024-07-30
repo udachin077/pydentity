@@ -12,8 +12,8 @@ email-validator = "2.2.0"
 itsdangerous = "2.2.0"
 passlib = "1.7.4"
 pyotp = "2.9.0"
-
-
+pydentity-db-sqlalchemy = { git = "https://github.com/udachin077/pydentity-db-sqlalchemy.git", optional = true }
+pydentity-db-tortoise = { git = "https://github.com/udachin077/pydentity-db-tortoise.git", optional = true }
 
 [tool.poetry.dev-dependencies]
 pytest = "*"
@@ -21,6 +21,9 @@ pytest-asyncio = "*"
 mypy = "1.11.0"
 types-passlib = "1.7.7.20240327"
 
+[tool.poetry.extras]
+sqlalchemy = ["pydentity-db-sqlalchemy"]
+tortoise = ["pydentity-db-tortoise"]
 
 [build-system]
 requires = ["poetry-core"]

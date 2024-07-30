@@ -5,6 +5,16 @@ from pydentity.abc import IUserTwoFactorTokenProvider
 from pydentity.security.claims import ClaimTypes
 from pydentity.types import TUser
 
+__all__ = (
+    'LockoutOptions',
+    'ClaimsIdentityOptions',
+    'PasswordOptions',
+    'SignInOptions',
+    'TokenOptions',
+    'UserOptions',
+    'IdentityOptions'
+)
+
 
 class LockoutOptions:
     """Options for configuring user lockout."""

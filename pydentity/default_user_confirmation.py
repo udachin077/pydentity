@@ -6,6 +6,8 @@ from pydentity.types import TUser
 if TYPE_CHECKING:
     from pydentity.user_manager import UserManager
 
+__all__ = ('DefaultUserConfirmation',)
+
 
 class DefaultUserConfirmation(IUserConfirmation[TUser], Generic[TUser]):
     """Default implementation of :exc:`IUserConfirmation[TUser]`."""

@@ -1,6 +1,8 @@
 from pydentity.identity_error import IdentityError
 from pydentity.resources import Resources
 
+__all__ = ('IdentityErrorDescriber',)
+
 
 # noinspection PyPep8Naming
 class IdentityErrorDescriber:

@@ -1,5 +1,7 @@
 from pydentity.identity_error import IdentityError
 
+__all__ = ('IdentityResult',)
+
 
 class IdentityResult:
     """Represents the result of an identity operation."""

@@ -10,6 +10,8 @@ if TYPE_CHECKING:
     from pydentity.user_manager import UserManager
     from pydentity.role_manager import RoleManager
 
+__all__ = ('UserClaimsPrincipalFactory',)
+
 
 class UserClaimsPrincipalFactory(IUserClaimsPrincipalFactory[TUser], Generic[TUser]):
     """Provides methods to create a claims principal for a given user."""
