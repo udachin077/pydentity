@@ -1,6 +1,6 @@
-import datetime
-import uuid
-from typing import TypeVar, Protocol, Optional, Callable
+from datetime import datetime
+from typing import TypeVar, Protocol, Optional, Callable, Union
+from uuid import UUID
 
 __all__ = (
     'Predicate',
@@ -24,12 +24,12 @@ __all__ = (
 )
 
 _T = TypeVar('_T')
-TKey = TypeVar('TKey')
+TKey = TypeVar('TKey', int, str, UUID, )
 
 Predicate = Callable[[_T], bool]
 Action = Callable[[_T], None]
 
-GUID = uuid.UUID
+GUID = Union[UUID, str]
 
 
 class UserProtokol(Protocol[TKey]):
@@ -39,7 +39,7 @@ class UserProtokol(Protocol[TKey]):
     email_confirmed: bool
     id: TKey
     lockout_enabled: bool
-    lockout_end: Optional[datetime.datetime]
+    lockout_end: Optional[datetime]
     normalized_email: Optional[str]
     normalized_username: Optional[str]
     password_hash: Optional[str]
