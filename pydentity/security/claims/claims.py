@@ -93,16 +93,6 @@ class ClaimsIdentity:
         self._claims.remove(claim)
 
     @overload
-    def find_all(self, claim_type: str, /) -> Generator[Claim]:
-        """
-        Retrieves a Claim`s where each Claim.type equals claim_type.
-
-        :param claim_type: The type of the claim to match.
-        :return:
-        """
-        ...
-
-    @overload
     def find_all(self, _match: Predicate[Claim], /) -> Generator[Claim]:
         """
         Retrieves a Claim`s where each claim is matched by match.
@@ -112,26 +102,26 @@ class ClaimsIdentity:
         """
         ...
 
-    def find_all(self, claim_type_or_match: str | Predicate[Claim]) -> Generator[Claim]:
-        if isfunction(claim_type_or_match):
-            _match: Predicate[Claim] = claim_type_or_match
-        else:
-            def _match(x: Claim) -> bool:
-                return x and x.type == claim_type_or_match  # type: ignore
-
-        for claim in self.claims:
-            if _match(claim):
-                yield claim
-
     @overload
-    def find_first(self, claim_type: str, /) -> Claim | None:
+    def find_all(self, claim_type: str, /) -> Generator[Claim]:
         """
-        Retrieves the first Claim`s where the Claim.type equals claim_type.
+        Retrieves a Claim`s where each Claim.type equals claim_type.
 
         :param claim_type: The type of the claim to match.
         :return:
         """
         ...
+
+    def find_all(self, *args) -> Generator[Claim]:
+        _match, = args
+        if isfunction(_match):
+            for claim in self.claims:
+                if _match(claim):
+                    yield claim
+        elif isinstance(_match, str):
+            yield from self.find_all(lambda c: c and c.type == _match)
+        else:
+            raise NotImplemented
 
     @overload
     def find_first(self, _match: Predicate[Claim], /) -> Claim | None:
@@ -143,28 +133,27 @@ class ClaimsIdentity:
         """
         ...
 
-    def find_first(self, claim_type_or_match: str | Predicate[Claim]) -> Claim | None:
-        if isfunction(claim_type_or_match):
-            _match: Predicate[Claim] = claim_type_or_match
-        else:
-            def _match(x: Claim) -> bool:
-                return x and x.type == claim_type_or_match  # type: ignore
-
-        for claim in self.claims:
-            if _match(claim):
-                return claim
-
-        return None
-
     @overload
-    def find_first_value(self, claim_type: str, /) -> str | None:
+    def find_first(self, claim_type: str, /) -> Claim | None:
         """
-        Return the claim value for the first claim with the specified claim_type if it exists, null otherwise
+        Retrieves the first Claim`s where the Claim.type equals claim_type.
 
         :param claim_type: The type of the claim to match.
         :return:
         """
         ...
+
+    def find_first(self, *args) -> Claim | None:
+        _match, = args
+        if isfunction(_match):
+            for claim in self.claims:
+                if _match(claim):
+                    return claim
+            return None
+        elif isinstance(_match, str):
+            return self.find_first(lambda c: c and c.type == _match)
+        else:
+            raise NotImplemented
 
     @overload
     def find_first_value(self, _match: Predicate[Claim], /) -> str | None:
@@ -176,11 +165,26 @@ class ClaimsIdentity:
         """
         ...
 
-    def find_first_value(self, claim_type_or_match: str | Predicate[Claim]) -> str | None:
-        if claim := self.find_first(claim_type_or_match):
-            return claim.value
+    @overload
+    def find_first_value(self, claim_type: str, /) -> str | None:
+        """
+        Return the claim value for the first claim with the specified claim_type if it exists, null otherwise
 
-        return None
+        :param claim_type: The type of the claim to match.
+        :return:
+        """
+        ...
+
+    def find_first_value(self, *args) -> str | None:
+        _match, = args
+        if isfunction(_match):
+            if claim := self.find_first(_match):
+                return claim.value
+            return None
+        elif isinstance(_match, str):
+            return self.find_first(lambda c: c.type == _match)
+        else:
+            raise NotImplemented
 
     @overload
     def has_claim(self, _match: Predicate[Claim], /) -> bool:
@@ -203,28 +207,37 @@ class ClaimsIdentity:
         """
         ...
 
-    def has_claim(self, claim_type_or_match: str | Predicate[Claim], claim_value: Any = None) -> bool:
-        if isfunction(claim_type_or_match):
-            _match: Predicate[Claim] = claim_type_or_match
-        else:
-            assert isinstance(claim_type_or_match, str)
-            _type: str = claim_type_or_match
-            _value: Any = claim_value
+    def has_claim(self, *args) -> bool:
+        _len = len(args)
 
-            def _match(x: Claim) -> bool:
-                return bool(x and x.type == _type and x.value == _value)
+        match _len:
+            case 1:
+                _match, = args
+                if not isfunction(_match):
+                    raise ValueError('_match must be Callable[[Claim], bool]')
 
-        for claim in self.claims:
-            if _match(claim):
-                return True
+                for claim in self.claims:
+                    if _match(claim):
+                        return True
+                return False
 
-        return False
+            case 2:
+                claim_type, claim_value, = args
+                if isinstance(claim_type, str):
+                    return self.has_claim(lambda c: c and c.type == claim_type and c.value == claim_value)
+
+                raise TypeError('claim_type must be "str"')
+
+            case _:
+                raise NotImplemented
 
     def __repr__(self) -> str:
         return f'<{self.__class__.__name__} auth:{self.authentication_type} at {id(self)}>'
 
 
 class ClaimsPrincipal:
+    __slots__ = ('_identities',)
+
     def __init__(self, *identities: ClaimsIdentity) -> None:
         self._identities: list[ClaimsIdentity] = list(identities) if identities else []
 
@@ -243,16 +256,6 @@ class ClaimsPrincipal:
                 yield claim
 
     @overload
-    def find_all(self, claim_type: str, /) -> Generator[Claim]:
-        """
-        Retrieves a Claim`s where each Claim.type equals claim_type.
-
-        :param claim_type: The type of the claim to match.
-        :return:
-        """
-        ...
-
-    @overload
     def find_all(self, _match: Predicate[Claim], /) -> Generator[Claim]:
         """
         Retrieves a Claim`s where each claim is matched by match.
@@ -262,28 +265,26 @@ class ClaimsPrincipal:
         """
         ...
 
-    def find_all(self, claim_type_or_match: str | Predicate[Claim]) -> Generator[Claim]:
-        if isfunction(claim_type_or_match):
-            _match: Predicate[Claim] = claim_type_or_match
-        else:
-            assert isinstance(claim_type_or_match, str)
-
-            def _match(x: Claim) -> bool:
-                return bool(x and x.type == claim_type_or_match)
-
-        for identity in self._identities:
-            for claim in identity.find_all(_match):
-                yield claim
-
     @overload
-    def find_first(self, claim_type: str, /) -> Claim | None:
+    def find_all(self, claim_type: str, /) -> Generator[Claim]:
         """
-        Retrieves the first Claim`s where the Claim.type equals claim_type.
+        Retrieves a Claim`s where each Claim.type equals claim_type.
 
         :param claim_type: The type of the claim to match.
         :return:
         """
         ...
+
+    def find_all(self, *args) -> Generator[Claim]:
+        _match, = args
+        if isfunction(_match):
+            for identity in self._identities:
+                for claim in identity.find_all(_match):
+                    yield claim
+        elif isinstance(_match, str):
+            yield from self.find_all(lambda c: c and c.type == _match)
+        else:
+            raise NotImplemented
 
     @overload
     def find_first(self, _match: Predicate[Claim], /) -> Claim | None:
@@ -295,28 +296,27 @@ class ClaimsPrincipal:
         """
         ...
 
-    def find_first(self, claim_type_or_match: str | Predicate[Claim]) -> Claim | None:
-        if isfunction(claim_type_or_match):
-            _match: Predicate[Claim] = claim_type_or_match
-        else:
-            def _match(x: Claim) -> bool:
-                return bool(x and x.type == claim_type_or_match)
-
-        for identity in self._identities:
-            if claim := identity.find_first(_match):
-                return claim
-
-        return None
-
     @overload
-    def find_first_value(self, claim_type: str, /) -> str | None:
+    def find_first(self, claim_type: str, /) -> Claim | None:
         """
-        Return the claim value for the first claim with the specified claim_type if it exists, null otherwise
+        Retrieves the first Claim`s where the Claim.type equals claim_type.
 
         :param claim_type: The type of the claim to match.
         :return:
         """
         ...
+
+    def find_first(self, *args):
+        _match, = args
+        if isfunction(_match):
+            for identity in self._identities:
+                if claim := identity.find_first(_match):
+                    return claim
+            return None
+        elif isinstance(_match, str):
+            return self.find_first(lambda c: c and c.type == _match)
+        else:
+            raise NotImplemented
 
     @overload
     def find_first_value(self, _match: Predicate[Claim], /) -> str | None:
@@ -328,10 +328,26 @@ class ClaimsPrincipal:
         """
         ...
 
-    def find_first_value(self, claim_type_or_match: str | Predicate[Claim]) -> str | None:
-        if claim := self.find_first(claim_type_or_match):
-            return claim.value
-        return None
+    @overload
+    def find_first_value(self, claim_type: str, /) -> str | None:
+        """
+        Return the claim value for the first claim with the specified claim_type if it exists, null otherwise
+
+        :param claim_type: The type of the claim to match.
+        :return:
+        """
+        ...
+
+    def find_first_value(self, *args) -> str | None:
+        _match, = args
+        if isfunction(_match):
+            if claim := self.find_first(_match):
+                return claim.value
+            return None
+        elif isinstance(_match, str):
+            return self.find_first(lambda c: c.type == _match)
+        else:
+            raise NotImplemented
 
     @overload
     def has_claim(self, _match: Predicate[Claim], /) -> bool:
@@ -354,22 +370,29 @@ class ClaimsPrincipal:
         """
         ...
 
-    def has_claim(self, claim_type_or_match: str | Predicate[Claim], claim_value: Any = None) -> bool:
-        if isfunction(claim_type_or_match):
-            _match: Predicate[Claim] = claim_type_or_match
-        else:
-            assert isinstance(claim_type_or_match, str)
-            _type: str = claim_type_or_match
-            _value: Any = claim_value
+    def has_claim(self, *args) -> bool:
+        _len = len(args)
 
-            def _match(x: Claim) -> bool:
-                return bool(x and x.type == _type and x.value == _value)
+        match _len:
+            case 1:
+                _match, = args
+                if not isfunction(_match):
+                    raise ValueError('_match must be Callable[[Claim], bool]')
 
-        for identity in self._identities:
-            if identity.has_claim(_match):
-                return True
+                for identity in self._identities:
+                    if identity.has_claim(_match):
+                        return True
+                return False
 
-        return False
+            case 2:
+                claim_type, claim_value, = args
+                if isinstance(claim_type, str):
+                    return self.has_claim(lambda c: c and c.type == claim_type and c.value == claim_value)
+
+                raise TypeError('claim_type must be "str"')
+
+            case _:
+                raise NotImplemented
 
     def select_primary_identity(self, identities: Iterable[ClaimsIdentity]) -> ClaimsIdentity | None:
         if not identities:

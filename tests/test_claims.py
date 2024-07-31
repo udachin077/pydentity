@@ -1,14 +1,7 @@
-from dataclasses import dataclass
-
 import pytest
 
 from pydentity.security.claims import ClaimTypes, ClaimsPrincipal, ClaimsIdentity, Claim
-
-
-@dataclass
-class _User:
-    username: str = "username"
-    email: str = "username@email.com"
+from tests.conftest import User
 
 
 @pytest.fixture
@@ -24,8 +17,8 @@ def identity(claims):
 @pytest.fixture
 def claims():
     return [
-        Claim(ClaimTypes.Name, _User.username),
-        Claim(ClaimTypes.Email, _User.email),
+        Claim(ClaimTypes.Name, User.username),
+        Claim(ClaimTypes.Email, User.email),
         Claim(ClaimTypes.Role, 'admin'),
         Claim(ClaimTypes.Role, 'user')
     ]
@@ -61,9 +54,8 @@ def test_identity_find_first_value(claim_type, result, identity):
     assert bool(identity.find_first_value(claim_type)) is result
 
 
-
 @pytest.mark.parametrize("claim_type, claim_value, result", {
-    (ClaimTypes.Name, _User.username, True,),
+    (ClaimTypes.Name, User.username, True,),
     (ClaimTypes.Name, "Undefined", False,),
     (ClaimTypes.SecurityStamp, "SecurityStamp", False,)
 })
@@ -72,7 +64,7 @@ def test_identity_has_claim(claim_type, claim_value, result, identity):
 
 
 @pytest.mark.parametrize("predicate, result", {
-    (lambda x: x.type == ClaimTypes.Name and x.value == _User.username, True,),
+    (lambda x: x.type == ClaimTypes.Name and x.value == User.username, True,),
     (lambda x: x.type == ClaimTypes.Name and x.value == "User.username", False,),
     (lambda x: x.type == ClaimTypes.SecurityStamp and x.value == "SecurityStamp", False,),
 })
@@ -111,7 +103,7 @@ def test_principal_find_first_value(claim_type, result, principal):
 
 
 @pytest.mark.parametrize("claim_type, claim_value, result", {
-    (ClaimTypes.Name, _User.username, True,),
+    (ClaimTypes.Name, User.username, True,),
     (ClaimTypes.Name, "Undefined", False,),
     (ClaimTypes.SecurityStamp, "SecurityStamp", False,)
 })
@@ -120,10 +112,10 @@ def test_principal_has_claim(claim_type, claim_value, result, principal):
 
 
 @pytest.mark.parametrize("predicate, result", {
-    (lambda x: x.type == ClaimTypes.Name and x.value == _User.username, True,),
-    (lambda x: x.type == ClaimTypes.Email and x.value == _User.email, True,),
+    (lambda x: x.type == ClaimTypes.Name and x.value == User.username, True,),
+    (lambda x: x.type == ClaimTypes.Email and x.value == User.email, True,),
     (lambda x: x.type == ClaimTypes.Email and x.value == "User.email", False,),
-    (lambda x: x.type == ClaimTypes.SecurityStamp and x.value == _User.username, False,),
+    (lambda x: x.type == ClaimTypes.SecurityStamp and x.value == User.username, False,),
 })
 def test_principal_has_claim_with_predicate(predicate, result, principal):
     assert principal.has_claim(predicate) is result
