@@ -16,7 +16,7 @@ class IRoleValidator(Generic[TRole], ABC):
         """
         Validates a role as an asynchronous operation.
 
-        :param manager: The RoleManager[TRole] that can be used to retrieve role properties.
-        :param role: The roel to validate.
+        :param manager: The ``RoleManager[TRole]`` that can be used to retrieve role properties.
+        :param role: The role to validate.
         :return:
         """

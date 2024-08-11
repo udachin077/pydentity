@@ -16,7 +16,7 @@ class IPasswordValidator(Generic[TUser], ABC):
         """
         Validates a password.
 
-        :param manager: The UserManager[TUser] that can be used to retrieve user properties.
+        :param manager: The ``UserManager[TUser]`` that can be used to retrieve user properties.
         :param password: The password supplied for validation.
         :return:
         """

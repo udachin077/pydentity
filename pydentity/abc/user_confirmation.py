@@ -15,7 +15,7 @@ class IUserConfirmation(Generic[TUser], ABC):
         """
         Determines whether the specified user is confirmed.
 
-        :param manager: The :exc:`UserManager[TUser]` that can be used to retrieve user properties.
+        :param manager: The ``UserManager[TUser]`` that can be used to retrieve user properties.
         :param user: The user.
         :return: Whether the user is confirmed.
         """

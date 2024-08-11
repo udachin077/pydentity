@@ -11,8 +11,8 @@ class IUserClaimsPrincipalFactory(Generic[TUser], ABC):
     @abstractmethod
     async def create(self, user: TUser) -> ClaimsPrincipal:
         """
-        Creates a ClaimsIdentity from an user.
+        Creates a ``ClaimsPrincipal`` from a user.
 
-        :param user: The user to create a :exc:`ClaimsIdentity` from.
+        :param user: The user to create a ``ClaimsPrincipal`` from.
         :return:
         """

@@ -15,7 +15,7 @@ class IUserTwoFactorTokenProvider(Generic[TUser], ABC):
         """
         Generates a token for the specified user and purpose.
 
-        :param manager:
+        :param manager: The ``UserManager[TUser]`` that can be used to retrieve user properties.
         :param purpose: The purpose the token will be used for.
         :param user: The user a token should be generated for.
         :return:
@@ -26,7 +26,7 @@ class IUserTwoFactorTokenProvider(Generic[TUser], ABC):
         """
         Returns a flag indicating whether the specified token is valid for the given user and purpose.
 
-        :param manager:
+        :param manager: The ``UserManager[TUser]`` that can be used to retrieve user properties.
         :param purpose: The purpose the token will be used for.
         :param token: The token to validate.
         :param user: The user a token should be validated for.
@@ -39,7 +39,7 @@ class IUserTwoFactorTokenProvider(Generic[TUser], ABC):
         Returns a flag indicating whether the token provider can generate a token suitable for two-factor authentication
         token for the specified user.
 
-        :param manager: The UserManager[TUser] that can be used to retrieve user properties.
+        :param manager: The ``UserManager[TUser]`` that can be used to retrieve user properties.
         :param user: The user a token could be generated for.
         :return:
         """

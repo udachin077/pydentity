@@ -66,9 +66,9 @@ class IUserStore(Generic[TUser], ABC):
     @abstractmethod
     async def find_by_name(self, normalized_username: str) -> Optional[TUser]:
         """
-        Finds and returns a user, if any, who has the specified normalized user name.
+        Finds and returns a user, if any, who has the specified normalized username.
 
-        :param normalized_username: The normalized user name to search for.
+        :param normalized_username: The normalized username to search for.
         :return:
         """
 
@@ -84,7 +84,7 @@ class IUserStore(Generic[TUser], ABC):
     @abstractmethod
     async def get_username(self, user: TUser) -> Optional[str]:
         """
-        Gets the user name for the specified user.
+        Gets the username for the specified user.
 
         :param user: The user whose name should be retrieved.
         :return:
@@ -96,14 +96,14 @@ class IUserStore(Generic[TUser], ABC):
         Sets the given username for the specified user.
 
         :param user: The user whose name should be set.
-        :param username: The user name to set.
+        :param username: The username to set.
         :return:
         """
 
     @abstractmethod
     async def get_normalized_username(self, user: TUser) -> Optional[str]:
         """
-        Gets the normalized user name for the specified user.
+        Gets the normalized username for the specified user.
 
         :param user: The user whose normalized name should be retrieved.
         :return:
@@ -190,7 +190,7 @@ class IUserClaimStore(IUserStore[TUser], Generic[TUser], ABC):
         Add claims to a user.
 
         :param user: The user to add the claim to.
-        :param claims: The collection of Claim`s to add.
+        :param claims: The collection of Claims to add.
         :return:
         """
 
@@ -217,7 +217,7 @@ class IUserClaimStore(IUserStore[TUser], Generic[TUser], ABC):
         Removes the specified claims from the given user.
 
         :param user: The user to remove the specified claims from.
-        :param claims: A collection of Claim`s` to remove.
+        :param claims: A collection of Claims to be removed.
         :return:
         """
 
@@ -320,7 +320,7 @@ class IUserLockoutStore(IUserStore[TUser], Generic[TUser], ABC):
     @abstractmethod
     async def get_lockout_enabled(self, user: TUser) -> bool:
         """
-        Retrieves a flag indicating whether user lockout can enabled for the specified user.
+        Retrieves a flag indicating whether user lockout can be enabled for the specified user.
 
         :param user: The user whose ability to be locked out should be returned.
         :return:
@@ -330,7 +330,7 @@ class IUserLockoutStore(IUserStore[TUser], Generic[TUser], ABC):
     async def get_lockout_end_date(self, user: TUser) -> Optional[datetime]:
         """
         Gets the last datetime a user's last lockout expired, if any.
-        Any time in the past should be indicates a user is not locked out.
+        Any time in the past should be indicated a user is not locked out.
 
         :param user: The user whose lockout date should be retrieved.
         :return:
@@ -339,7 +339,7 @@ class IUserLockoutStore(IUserStore[TUser], Generic[TUser], ABC):
     @abstractmethod
     async def increment_access_failed_count(self, user: TUser) -> int:
         """
-        Records that a failed access has occurred, incrementing the failed access count.
+        Records that failed access has occurred, incrementing the failed access count.
 
         :param user: The user whose cancellation count should be incremented.
         :return:
@@ -368,7 +368,7 @@ class IUserLockoutStore(IUserStore[TUser], Generic[TUser], ABC):
     async def set_lockout_end_date(self, user: TUser, lockout_end: datetime) -> None:
         """
         Locks out a user until the specified end date has passed.
-        Setting a end date in the past immediately unlocks a user.
+        Setting an end date in the past immediately unlocks a user.
 
         :param user: The user whose lockout date should be set.
         :param lockout_end: The datetime after which the user's lockout should end.
@@ -378,7 +378,7 @@ class IUserLockoutStore(IUserStore[TUser], Generic[TUser], ABC):
 
 class IUserLoginStore(IUserStore[TUser], Generic[TUser], ABC):
     """Provides an abstraction for storing information that maps external login information provided
-    by Microsoft Account, Facebook etc. to a user account."""
+    by Microsoft Account, Facebook, etc. to a user account."""
 
     @abstractmethod
     async def add_login(self, user: TUser, login: UserLoginInfo) -> None:
@@ -413,17 +413,17 @@ class IUserLoginStore(IUserStore[TUser], Generic[TUser], ABC):
     async def remove_login(self, user: TUser, login_provider: str, provider_key: str) -> None:
         """
         Attempts to remove the provided login information from the specified user
-        and returns a flag indicating whether the removal succeed or not.
+        and returns a flag indicating whether the removal succeeds or not.
 
         :param user: The user to remove the login information from.
-        :param login_provider: The login provide whose information should be removed.
+        :param login_provider: The login provides that information should be removed.
         :param provider_key: The key given by the external login provider for the specified user.
         :return:
         """
 
 
 class IUserPasswordStore(IUserStore[TUser], Generic[TUser], ABC):
-    """Provides an abstraction for a store containing auth' password hashes."""
+    """Provides an abstraction for a store containing auth password hashes."""
 
     @abstractmethod
     async def get_password_hash(self, user: TUser) -> Optional[str]:
@@ -448,14 +448,14 @@ class IUserPasswordStore(IUserStore[TUser], Generic[TUser], ABC):
         """
          Sets the password hash for the specified user.
 
-        :param user: The user whose password hash to set.
+        :param user: The user whose password hash is to set.
         :param password_hash: The password hash to set.
         :return:
         """
 
 
 class IUserPhoneNumberStore(IUserStore[TUser], Generic[TUser], ABC):
-    """Provides an abstraction for a store containing auth' telephone numbers."""
+    """Provides an abstraction for a store containing auth telephone numbers."""
 
     @abstractmethod
     async def get_phone_number(self, user: TUser) -> Optional[str]:
@@ -577,7 +577,7 @@ class IUserTwoFactorRecoveryCodeStore(IUserStore[TUser], Generic[TUser], ABC):
     @abstractmethod
     async def count_codes(self, user: TUser) -> int:
         """
-        Returns how many recovery code are still valid for a user.
+        Returns how much recovery code is still valid for a user.
 
         :param user: The user who owns the recovery code.
         :return:
@@ -587,7 +587,7 @@ class IUserTwoFactorRecoveryCodeStore(IUserStore[TUser], Generic[TUser], ABC):
     async def redeem_code(self, user: TUser, code: str) -> bool:
         """
         Returns whether a recovery code is valid for a user.
-        Note: recovery codes are only valid once, and will be invalid after use.
+        Note: recovery codes are only valid once and will be invalid after use.
 
         :param user: The user who owns the recovery code.
         :param code: The recovery code to use.

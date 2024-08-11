@@ -16,7 +16,7 @@ class IUserValidator(Generic[TUser], ABC):
         """
         Validates the specified user.
 
-        :param manager: The UserManager[TUser] that can be used to retrieve user properties.
+        :param manager: The ``UserManager[TUser]`` that can be used to retrieve user properties.
         :param user: The user to validate.
         :return:
         """

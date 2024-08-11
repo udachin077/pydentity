@@ -7,7 +7,7 @@ from pydentity.types import TRole
 
 
 class IRoleStore(Generic[TRole], ABC):
-    """Provides an abstraction for a storage and management of roles."""
+    """Provides an abstraction for the storage and management of roles."""
 
     @abstractmethod
     def create_model_from_dict(self, **kwargs: Any) -> TRole:
