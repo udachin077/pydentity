@@ -1,3 +1,4 @@
+import base64
 import dataclasses
 from datetime import datetime as _datetime, timedelta, UTC
 from typing import Any
@@ -10,7 +11,7 @@ from pydentity.exc import ArgumentNoneException
 __all__ = (
     'asdict',
     'datetime',
-    'generate_uri',
+    'generate_totp_qrcode_uri',
     'get_device_uuid',
     'is_none_or_empty',
 )
@@ -60,7 +61,7 @@ def asdict(obj: Any, exclude_none: bool = True) -> dict[str, Any]:
     return dataclasses.asdict(obj)
 
 
-def generate_uri(secret: str, name: str, app_name: str) -> str:
+def generate_totp_qrcode_uri(secret: str, name: str, app_name: str, modifier: str | None = None) -> str:
     if not secret:
         raise ArgumentNoneException('secret')
     if not name:
@@ -68,4 +69,7 @@ def generate_uri(secret: str, name: str, app_name: str) -> str:
     if not app_name:
         raise ArgumentNoneException('app_name')
 
-    return pyotp.TOTP(secret).provisioning_uri(name=name, issuer_name=app_name)
+    b32secret = secret.encode() + modifier.encode() if modifier else secret.encode()
+    return pyotp.TOTP(
+        base64.b32encode(b32secret).decode()
+    ).provisioning_uri(name=name, issuer_name=app_name)

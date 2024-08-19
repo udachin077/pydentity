@@ -30,7 +30,7 @@ class TotpSecurityStampBasedTokenProvider(IUserTwoFactorTokenProvider[TUser], Ge
         and validated it with the same purpose a token with the purpose of TOTP would not pass the check even if it was
         for the same user.
 
-        :param manager: The :exc:`UserManager[TUser]` that can be used to retrieve user properties.
+        :param manager: The ``UserManager[TUser]`` that can be used to retrieve user properties.
         :param purpose: The purpose the token will be used for.
         :param user: The user a token should be generated for.
         :return:
@@ -50,7 +50,7 @@ class TotpSecurityStampBasedTokenProvider(IUserTwoFactorTokenProvider[TUser], Ge
         """
         Returns a flag indicating whether the specified token is valid for the given user and purpose.
 
-        :param manager: The :exc:`UserManager[TUser]` that can be used to retrieve user properties.
+        :param manager: The ``UserManager[TUser]`` that can be used to retrieve user properties.
         :param purpose: The purpose the token will be used for.
         :param token: The token to validate.
         :param user: The user a token should be validated for.
@@ -73,7 +73,7 @@ class TotpSecurityStampBasedTokenProvider(IUserTwoFactorTokenProvider[TUser], Ge
         Returns a constant, provider and user unique modifier used for entropy in generated tokens
         from user information.
 
-        :param manager: The :exc:`UserManager[TUser]` that can be used to retrieve user properties.
+        :param manager: The ``UserManager[TUser]`` that can be used to retrieve user properties.
         :param purpose: The purpose the token will be generated for.
         :param user: The user a token should be generated for.
         :return:
@@ -124,3 +124,18 @@ class PhoneNumberTokenProvider(TotpSecurityStampBasedTokenProvider[TUser], Gener
 
         phone_number = await manager.get_phone_number(user)
         return f'PhoneNumber:{purpose}:{phone_number}'.encode()
+
+
+class AuthenticatorTokenProvider(IUserTwoFactorTokenProvider[TUser], Generic[TUser]):
+    async def generate(self, manager: 'UserManager[TUser]', purpose: str, user: TUser) -> str:
+        return ''
+
+    async def validate(self, manager: 'UserManager[TUser]', purpose: str, token: str, user: TUser) -> bool:
+        key = await manager.get_authenticator_key(user)
+        if is_none_or_empty(key):
+            return False
+        return Rfc6238AuthenticationService.validate_code(key.encode(), token)
+
+    async def can_generate_two_factor(self, manager: 'UserManager[TUser]', user: TUser) -> bool:
+        key = await manager.get_authenticator_key(user)
+        return not is_none_or_empty(key)

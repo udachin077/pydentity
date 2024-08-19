@@ -23,7 +23,7 @@ class UserValidator(IUserValidator[TUser], Generic[TUser]):
     def __init__(self, errors: IdentityErrorDescriber | None = None) -> None:
         """
 
-        :param errors: The :exc:`IdentityErrorDescriber` used to provider error messages.
+        :param errors: The ``IdentityErrorDescriber`` used to provider error messages.
         """
         self._describer = errors or IdentityErrorDescriber()
 

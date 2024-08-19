@@ -1,11 +1,14 @@
-from typing import Generic
+from typing import Generic, Sequence, TYPE_CHECKING
 
 from pydentity.abc import PasswordVerificationResult, IPasswordHasher
 from pydentity.exc import ArgumentNoneException
 from pydentity.types import TUser
 from pydentity.utils import is_none_or_empty
 
-__all__ = ('PasswordHasher', 'OldPasswordHasher',)
+if TYPE_CHECKING:
+    from pwdlib.hashers import HasherProtocol
+
+__all__ = ('PasswordHasher', 'BcryptPasswordHasher', 'Argon2PasswordHasher',)
 
 
 class PasswordHasher(IPasswordHasher[TUser], Generic[TUser]):
@@ -13,9 +16,9 @@ class PasswordHasher(IPasswordHasher[TUser], Generic[TUser]):
 
     __slots__ = ('_hasher',)
 
-    def __init__(self) -> None:
+    def __init__(self, hashers: Sequence['HasherProtocol']) -> None:
         from pwdlib import PasswordHash
-        self._hasher = PasswordHash.recommended()
+        self._hasher = PasswordHash(hashers)
 
     def hash_password(self, user: TUser, password: str) -> str:
         if password is None:
@@ -26,35 +29,22 @@ class PasswordHasher(IPasswordHasher[TUser], Generic[TUser]):
         if is_none_or_empty(password) or is_none_or_empty(hashed_password):
             return PasswordVerificationResult.Failed
 
-        valid, _hash = self._hasher.verify_and_update(password, hashed_password)
+        valid, hash_updated = self._hasher.verify_and_update(password, hashed_password)
 
         if valid:
-            if _hash is not None:
+            if hash_updated is not None:
                 return PasswordVerificationResult.SuccessRehashNeeded
             return PasswordVerificationResult.Success
         return PasswordVerificationResult.Failed
 
 
-class OldPasswordHasher(IPasswordHasher[TUser], Generic[TUser]):
-    """Implements the standard password hashing."""
+class BcryptPasswordHasher(PasswordHasher, Generic[TUser]):
+    def __init__(self):
+        from pwdlib.hashers.bcrypt import BcryptHasher
+        super().__init__((BcryptHasher(),))
 
-    __slots__ = ('_hasher',)
 
-    def __init__(self) -> None:
-        from passlib.context import CryptContext
-        self._hasher = CryptContext(schemes=['bcrypt'])
-
-    def hash_password(self, user: TUser, password: str) -> str:
-        if password is None:
-            raise ArgumentNoneException('password')
-        return self._hasher.hash(password)
-
-    def verify_hashed_password(self, user: TUser, hashed_password: str, password: str) -> PasswordVerificationResult:
-        if is_none_or_empty(password) or is_none_or_empty(hashed_password):
-            return PasswordVerificationResult.Failed
-
-        if self._hasher.verify(password, hashed_password):
-            if self._hasher.needs_update(hashed_password):
-                return PasswordVerificationResult.SuccessRehashNeeded
-            return PasswordVerificationResult.Success
-        return PasswordVerificationResult.Failed
+class Argon2PasswordHasher(PasswordHasher, Generic[TUser]):
+    def __init__(self):
+        from pwdlib.hashers.argon2 import Argon2Hasher
+        super().__init__((Argon2Hasher(),))

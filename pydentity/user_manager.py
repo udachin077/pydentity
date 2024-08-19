@@ -1,7 +1,6 @@
 import datetime
 import logging
 import random
-import string
 import uuid
 from collections.abc import Iterable
 from typing import Final, Optional, Generic, cast, overload
@@ -37,9 +36,9 @@ from pydentity.exc import (
     NotSupportedException
 )
 from pydentity.identity_error_describer import IdentityErrorDescriber
-from pydentity.identity_result import IdentityResult
 from pydentity.identity_options import IdentityOptions
-from pydentity.password_hasher import PasswordHasher
+from pydentity.identity_result import IdentityResult
+from pydentity.password_hasher import Argon2PasswordHasher
 from pydentity.resources import Resources
 from pydentity.security.claims import ClaimsPrincipal, Claim, ClaimTypes
 from pydentity.types import TUser
@@ -87,35 +86,23 @@ class UserManager(Generic[TUser]):
             logger: Optional[logging.Logger] = None
     ) -> None:
         """
-        Constructs a new instance of UserManager[TUser].
+        Constructs a new instance of ``UserManager[TUser]``.
 
         :param store: The persistence store the manager will operate over.
         :param options:
         :param password_hasher: The password hashing implementation to use when saving passwords.
-        :param password_validators: A collection of IPasswordValidator[TUser] to validate passwords against.
-        :param user_validators: A collection of IUserValidator[TUser] to validate auth against.
-        :param key_normalizer: The ILookupNormalizer to use when generating index keys for auth.
-        :param errors: The IdentityErrorDescriber used to provider error messages.
+        :param password_validators: A collection of ``IPasswordValidator[TUser]`` to validate passwords against.
+        :param user_validators: A collection of ``IUserValidator[TUser]`` to validate auth against.
+        :param key_normalizer: The ``ILookupNormalizer`` to use when generating index keys for auth.
+        :param errors: The ``IdentityErrorDescriber`` used to provider error messages.
         :param logger: The logger used to log messages, warnings and errors.
-
-        ## Example
-
-        from pydentity import UserManager, PasswordValidator, UserValidator, UpperLookupNormalizer
-
-        manager = UserManager(
-            UserStore(),
-            password_validators=[PasswordValidator()],
-            user_validators=[UserValidator()],
-            key_normalizer=UpperLookupNormalizer()
-        )
-
         """
         if not store:
             raise ArgumentNoneException('store')
 
         self.store = store
         self.options: IdentityOptions = options or IdentityOptions()
-        self.password_hasher: IPasswordHasher[TUser] = password_hasher or PasswordHasher()
+        self.password_hasher: IPasswordHasher[TUser] = password_hasher or Argon2PasswordHasher()
         self.key_normalizer = key_normalizer
         self.logger = logger or logging.Logger(self.__class__.__name__)
         self.password_validators = password_validators
@@ -130,7 +117,8 @@ class UserManager(Generic[TUser]):
     def supports_user_authentication_tokens(self) -> bool:
         """
         Gets a flag indicating whether the backing user store supports authentication tokens.
-        True if the backing user store supports authentication tokens, otherwise False.
+        ``True`` if the backing user store supports authentication tokens, otherwise ``False``.
+
         :return:
         """
         return issubclass(type(self.store), IUserAuthenticationTokenStore)
@@ -139,7 +127,8 @@ class UserManager(Generic[TUser]):
     def supports_user_authenticator_key(self) -> bool:
         """
         Gets a flag indicating whether the backing user store supports a user authenticator.
-        True if the backing user store supports a user authenticator, otherwise False.
+        ``True`` if the backing user store supports a user authenticator, otherwise ``False``.
+
         :return:
         """
         return issubclass(type(self.store), IUserAuthenticatorKeyStore)
@@ -148,7 +137,8 @@ class UserManager(Generic[TUser]):
     def supports_user_two_factor_recovery_codes(self) -> bool:
         """
         Gets a flag indicating whether the backing user store supports recovery codes.
-        True if the backing user store supports a user authenticator, otherwise False.
+        ``True`` if the backing user store supports a user authenticator, otherwise ``False``.
+
         :return:
         """
         return issubclass(type(self.store), IUserTwoFactorRecoveryCodeStore)
@@ -157,7 +147,8 @@ class UserManager(Generic[TUser]):
     def supports_user_two_factor(self) -> bool:
         """
         Gets a flag indicating whether the backing user store supports two-factor authentication.
-        True if the backing user store supports user two-factor authentication, otherwise False.
+        ``True`` if the backing user store supports user two-factor authentication, otherwise ``False``.
+
         :return:
         """
         return issubclass(type(self.store), IUserTwoFactorStore)
@@ -166,7 +157,8 @@ class UserManager(Generic[TUser]):
     def supports_user_password(self) -> bool:
         """
         Gets a flag indicating whether the backing user store supports user passwords.
-        True if the backing user store supports user passwords, otherwise False.
+        ``True`` if the backing user store supports user passwords, otherwise ``False``.
+
         :return:
         """
         return issubclass(type(self.store), IUserPasswordStore)
@@ -175,7 +167,8 @@ class UserManager(Generic[TUser]):
     def supports_user_security_stamp(self) -> bool:
         """
         Gets a flag indicating whether the backing user store supports security stamps.
-        True if the backing user store supports user security stamps, otherwise False.
+        ``True`` if the backing user store supports user security stamps, otherwise ``False``.
+
         :return:
         """
         return issubclass(type(self.store), IUserSecurityStampStore)
@@ -184,7 +177,8 @@ class UserManager(Generic[TUser]):
     def supports_user_role(self) -> bool:
         """
         Gets a flag indicating whether the backing user store supports user roles.
-        True if the backing user store supports user roles, otherwise False.
+        ``True`` if the backing user store supports user roles, otherwise ``False``.
+
         :return:
         """
         return issubclass(type(self.store), IUserRoleStore)
@@ -193,7 +187,8 @@ class UserManager(Generic[TUser]):
     def supports_user_login(self) -> bool:
         """
         Gets a flag indicating whether the backing user store supports external logins.
-        True if the backing user store supports user roles, otherwise False.
+        ``True`` if the backing user store supports user roles, otherwise ``False``.
+
         :return:
         """
         return issubclass(type(self.store), IUserLoginStore)
@@ -202,7 +197,8 @@ class UserManager(Generic[TUser]):
     def supports_user_email(self) -> bool:
         """
         Gets a flag indicating whether the backing user store supports user emails.
-        True if the backing user store supports user emails, otherwise False.
+        ``True`` if the backing user store supports user emails, otherwise ``False``.
+
         :return:
         """
         return issubclass(type(self.store), IUserEmailStore)
@@ -211,7 +207,8 @@ class UserManager(Generic[TUser]):
     def supports_user_phone_number(self) -> bool:
         """
         Gets a flag indicating whether the backing user store supports user telephone numbers.
-        True if the backing user store supports user telephone numbers, otherwise False.
+        ``True`` if the backing user store supports user telephone numbers, otherwise ``False``.
+
         :return:
         """
         return issubclass(type(self.store), IUserPhoneNumberStore)
@@ -220,7 +217,8 @@ class UserManager(Generic[TUser]):
     def supports_user_claim(self) -> bool:
         """
         Gets a flag indicating whether the backing user store supports user claims.
-        True if the backing user store supports user claims, otherwise False.
+        ``True`` if the backing user store supports user claims, otherwise ``False``.
+
         :return:
         """
         return issubclass(type(self.store), IUserClaimStore)
@@ -229,7 +227,8 @@ class UserManager(Generic[TUser]):
     def supports_user_lockout(self) -> bool:
         """
         Gets a flag indicating whether the backing user store supports user lock-outs.
-        True if the backing user store supports user lock-outs, otherwise False.
+        ``True`` if the backing user store supports user lock-outs, otherwise ``False``.
+
         :return:
         """
         return issubclass(type(self.store), IUserLockoutStore)
@@ -258,7 +257,7 @@ class UserManager(Generic[TUser]):
         """
         Returns the Name claim value if present otherwise returns None.
 
-        :param user: The TUser instance.
+        :param user: The ``TUser`` instance.
         :return:
         """
         ...
@@ -268,7 +267,7 @@ class UserManager(Generic[TUser]):
         """
         Gets the username for the specified user.
 
-        :param user: The ClaimsPrincipal instance.
+        :param user: The ``ClaimsPrincipal`` instance.
         :return:
         """
         ...
@@ -302,7 +301,7 @@ class UserManager(Generic[TUser]):
         """
         Gets the user identifier for the specified user.
 
-        :param user: The TUser instance.
+        :param user: The ``TUser`` instance.
         :return:
         """
         ...
@@ -312,7 +311,7 @@ class UserManager(Generic[TUser]):
         """
         Returns the User ID claim value if present otherwise returns None.
 
-        :param user: The ClaimsPrincipal instance.
+        :param user: The ``ClaimsPrincipal`` instance.
         :return:
         """
         ...
@@ -328,10 +327,10 @@ class UserManager(Generic[TUser]):
 
     async def get_user(self, principal: ClaimsPrincipal) -> Optional[TUser]:
         """
-        Returns the user corresponding to the IdentityOptions.ClaimsIdentity.UserIdClaimType claim in
-        the principal or None.
+        Returns the user corresponding to the ``IdentityOptions.claims_identity.user_id_claim_type`` claim in
+        the principal or ``None``.
 
-        :param principal: The ClaimsPrincipal instance.
+        :param principal: The ``ClaimsPrincipal`` instance.
         :return:
         """
         if principal is None:
@@ -351,7 +350,18 @@ class UserManager(Generic[TUser]):
         """
         return str(uuid.uuid4())
 
-    async def create(self, user: TUser, password: Optional[str] = None) -> IdentityResult:
+    @overload
+    async def create(self, user: TUser) -> IdentityResult:
+        """
+        Create the specified user in the backing stores.
+
+        :param user: The user to create.
+        :return:
+        """
+        ...
+
+    @overload
+    async def create(self, user: TUser, password: str) -> IdentityResult:
         """
         Create the specified user in the backing stores.
 
@@ -359,6 +369,9 @@ class UserManager(Generic[TUser]):
         :param password:
         :return:
         """
+        ...
+
+    async def create(self, user: TUser, password: Optional[str] = None) -> IdentityResult:
         if user is None:
             raise ArgumentNoneException('user')
 
@@ -406,7 +419,7 @@ class UserManager(Generic[TUser]):
 
     async def find_by_id(self, user_id: str) -> Optional[TUser]:
         """
-        Finds and returns a user, if any, who has the specified user_id.
+        Finds and returns a user, if any, who has the specified ``user_id``.
 
         :param user_id: The user ID to search for.
         :return:
@@ -418,7 +431,7 @@ class UserManager(Generic[TUser]):
 
     async def find_by_name(self, username: str) -> Optional[TUser]:
         """
-        Finds and returns a user, if any, who has the specified username.
+        Finds and returns a user, if any, who has the specified ``username``.
 
         :param username: The username to search for.
         :return:
@@ -426,7 +439,7 @@ class UserManager(Generic[TUser]):
         if not username:
             raise ArgumentNoneException('username')
 
-        return await self.store.find_by_name(self._normalize_name(username))  # type: ignore
+        return await self.store.find_by_name(self._normalize_name(username))
 
     async def update_normalized_username(self, user: TUser) -> None:
         """
@@ -501,7 +514,7 @@ class UserManager(Generic[TUser]):
 
     async def change_password(self, user: TUser, current_password: str, new_password: str) -> IdentityResult:
         """
-        Changes a user's password after confirming the specified current_password is correct.
+        Changes a user's password after confirming the specified ``current_password`` is correct.
 
         :param user: The user whose password should be set.
         :param current_password: The current password to validate before changing.
@@ -525,7 +538,7 @@ class UserManager(Generic[TUser]):
 
     async def remove_password(self, user: TUser) -> IdentityResult:
         """
-        Remove password for the specified user.
+        Remove the password for the specified user.
 
         :param user:
         :return:
@@ -635,10 +648,10 @@ class UserManager(Generic[TUser]):
     async def remove_login(self, user: TUser, login_provider: str, provider_key: str) -> IdentityResult:
         """
         Attempts to remove the provided external login information from the specified user.
-        and returns a flag indicating whether the removal succeed or not.
+        And returns a flag indicating whether the removal succeeds or not.
 
         :param user: The user to remove the login information from.
-        :param login_provider: The login provide whose information should be removed.
+        :param login_provider: The login provides that information should be removed.
         :param provider_key: The key given by the external login provider for the specified user.
         :return:
         """
@@ -656,10 +669,10 @@ class UserManager(Generic[TUser]):
 
     async def add_login(self, user: TUser, login: UserLoginInfo) -> IdentityResult:
         """
-        Adds an external UserLoginInfo to the specified user.
+        Adds an external ``UserLoginInfo`` to the specified user.
 
         :param user: The user to add the login to.
-        :param login: The external UserLoginInfo to add to the specified user.
+        :param login: The external ``UserLoginInfo`` to add to the specified user.
         :return:
         """
         if user is None:
@@ -704,7 +717,7 @@ class UserManager(Generic[TUser]):
 
     async def replace_claim(self, user: TUser, claim: Claim, new_claim: Claim) -> IdentityResult:
         """
-        Replaces the given claim on the specified user with the new_claim.
+        Replaces the given ``claim`` on the specified user with the ``new_claim``.
 
         :param user: The user to replace the claim on.
         :param claim: The claim to replace.
@@ -726,7 +739,7 @@ class UserManager(Generic[TUser]):
         Removes the specified claims from the given user.
 
         :param user: The user to remove the specified claims from.
-        :param claims: A collection of Claims to remove.
+        :param claims: A collection of ``Claim``'s to be removed.
         :return:
         """
         if user is None:
@@ -739,7 +752,7 @@ class UserManager(Generic[TUser]):
 
     async def get_claims(self, user: TUser) -> list[Claim]:
         """
-        Gets a list of Claims to be belonging to the specified user.
+        Gets a list of ``Claim``'s to be belonging to the specified user.
 
         :param user: The user whose claims to retrieve.
         :return:
@@ -839,7 +852,7 @@ class UserManager(Generic[TUser]):
 
     async def get_users_in_role(self, role: str) -> list[TUser]:
         """
-        Returns a list of auth from the user stores who are members of the specified role_name.
+        Returns a list of auth from the user stores who are members of the specified ``role``.
 
         :param role: The name of the role whose auth should be returned.
         :return:
@@ -940,7 +953,7 @@ class UserManager(Generic[TUser]):
     async def is_email_confirmed(self, user: TUser) -> bool:
         """
         Gets a flag indicating whether the email address for the specified user has been verified,
-        True if the email address is verified otherwise False.
+        ``True`` if the email address is verified otherwise ``False``.
 
         :param user: The user whose email confirmation status should be returned.
         :return:
@@ -966,7 +979,7 @@ class UserManager(Generic[TUser]):
 
     async def change_email(self, user: TUser, new_email: str, token: str) -> IdentityResult:
         """
-        Updates a auth emails if the specified email change token is valid for the user.
+        Updates an auth emails if the specified email change token is valid for the user.
 
         :param user: The user whose email should be updated.
         :param new_email: The new email address.
@@ -1117,7 +1130,7 @@ class UserManager(Generic[TUser]):
 
         :param user: The user to validate the token against.
         :param token_provider: The token provider used to generate the token.
-        :param purpose: The purpose the token should be generated for.
+        :param purpose: The purpose of the token should be generated for.
         :param token: The token to validate.
         :return:
         """
@@ -1142,7 +1155,7 @@ class UserManager(Generic[TUser]):
 
         :param user: The user the token will be for.
         :param token_provider: The provider which will generate the token.
-        :param purpose: The purpose the token will be for.
+        :param purpose: The purpose of the token will be for.
         :return:
         """
         if user is None:
@@ -1157,7 +1170,7 @@ class UserManager(Generic[TUser]):
 
     async def get_valid_two_factor_providers(self, user: TUser) -> list[str]:
         """
-        Gets a list of valid two factor token providers for the specified user.
+        Gets a list of valid two-factor token providers for the specified user.
 
         :param user: The user the whose two-factor authentication providers will be returned.
         :return:
@@ -1327,7 +1340,7 @@ class UserManager(Generic[TUser]):
         If the failed access account is greater than or equal to the configured maximum number of attempts,
         the user will be locked out for the configured lockout time span.
 
-        :param user: The user whose failed access count to increment.
+        :param user: The user whose failed access counts to increment.
         :return:
         """
         if user is None:
@@ -1472,7 +1485,7 @@ class UserManager(Generic[TUser]):
 
         :return:
         """
-        return pyotp.random_base32(128, list(f'{string.ascii_letters}234567'))
+        return pyotp.random_base32()
 
     async def generate_new_two_factor_recovery_codes(self, user: TUser, number: int) -> Optional[set[str]]:
         """
@@ -1507,8 +1520,8 @@ class UserManager(Generic[TUser]):
 
     async def redeem_two_factor_recovery_code(self, user: TUser, code: str) -> IdentityResult:
         """
-        Returns whether a recovery code is valid for a user. Note: recovery codes are only valid once,
-        and will be invalid after use.
+        Returns whether a recovery code is valid for a user.
+        Note: recovery codes are only valid once and will be invalid after use.
 
         :param user: The user who owns the recovery code.
         :param code: The recovery code to use.
@@ -1526,7 +1539,7 @@ class UserManager(Generic[TUser]):
 
     async def count_recovery_codes(self, user: TUser) -> int:
         """
-        Returns how many recovery code are still valid for a user.
+        Returns how much recovery code is still valid for a user.
 
         :param user:
         :return:
@@ -1535,6 +1548,12 @@ class UserManager(Generic[TUser]):
             raise ArgumentNoneException('user')
 
         return await self._get_recovery_code_store().count_codes(user)
+
+    def get_personal_data(self, user: TUser) -> dict[str, ...]:
+        personal_data: dict[str, ...] = dict()
+        for prop in user.__personal_data__:  # type: ignore
+            personal_data.update({prop: getattr(user, prop)})
+        return personal_data
 
     def _normalize_name(self, name: Optional[str]) -> Optional[str]:
         """Normalize user or role name for consistent comparisons."""
@@ -1569,7 +1588,7 @@ class UserManager(Generic[TUser]):
 
     async def _validate_user(self, user: TUser) -> IdentityResult:
         """
-        Should return IdentityResult.Success if validation is successful.
+        Should return ``IdentityResult.success`` if validation is successful.
         This is called before saving the user via create or update.
         """
         if user.security_stamp is None:
@@ -1590,7 +1609,7 @@ class UserManager(Generic[TUser]):
 
     async def _validate_password(self, user: TUser, password: str) -> IdentityResult:  # noqa
         """
-        Should return IdentityResult.Success if validation is successful.
+        Should return ``IdentityResult.success`` if validation is successful.
         This is called before updating the password hash.
         """
         if self.password_validators:

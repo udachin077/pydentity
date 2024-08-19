@@ -5,7 +5,11 @@ from pydentity.identity_error_describer import IdentityErrorDescriber
 from pydentity.identity_options import IdentityOptions
 from pydentity.identity_result import IdentityResult
 from pydentity.lookup_normalizer import UpperLookupNormalizer, LowerLookupNormalizer
-from pydentity.password_hasher import PasswordHasher
+from pydentity.password_hasher import (
+    PasswordHasher,
+    Argon2PasswordHasher,
+    BcryptPasswordHasher
+)
 from pydentity.password_validator import PasswordValidator
 from pydentity.token_provider import (
     TotpSecurityStampBasedTokenProvider,
@@ -18,3 +22,4 @@ from pydentity.user_validator import UserValidator
 from pydentity.role_validator import RoleValidator
 from pydentity.role_manager import RoleManager
 from pydentity.user_manager import UserManager
+from pydentity.signin_manager import SignInManager

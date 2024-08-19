@@ -2,6 +2,7 @@ from typing import Generic, TYPE_CHECKING
 
 from pydentity.abc import IUserClaimsPrincipalFactory
 from pydentity.exc import ArgumentNoneException
+from pydentity.identity_constants import IdentityConstants
 from pydentity.identity_options import IdentityOptions
 from pydentity.security.claims import ClaimsPrincipal, ClaimsIdentity, Claim, ClaimTypes
 from pydentity.types import TUser, TRole
@@ -36,7 +37,7 @@ class UserClaimsPrincipalFactory(IUserClaimsPrincipalFactory[TUser], Generic[TUs
         username = await self.user_manager.get_username(user=user)
 
         identity = ClaimsIdentity(
-            'Pydentity.Application',
+            IdentityConstants.ApplicationScheme,
             Claim(ClaimTypes.NameIdentifier, user_id),
             Claim(ClaimTypes.Name, username),
             name_claim_type=self.options.claims_identity.username_claim_type,

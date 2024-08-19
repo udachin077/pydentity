@@ -1,5 +1,4 @@
 from collections.abc import Iterable, Generator
-from copy import deepcopy
 from inspect import isfunction
 from typing import Any, Final, Literal, overload
 
@@ -34,9 +33,7 @@ class Claim:
         return self._subject
 
     def clone(self, identity: 'ClaimsIdentity') -> 'Claim':
-        instance = deepcopy(self)
-        instance._subject = identity
-        return instance
+        return Claim(self.type, self.value, identity)
 
     def __repr__(self) -> str:
         return f'<{self.__class__.__name__} {self.type}:{self.value} at {id(self)}>'

@@ -9,7 +9,7 @@ __all__ = ('DefaultPersonalDataProtector',)
 
 
 class DefaultPersonalDataProtector(IPersonalDataProtector):
-    """Default implementation of :exc:`IPersonalDataProtector`."""
+    """Default implementation of ``IPersonalDataProtector``."""
 
     __slots__ = ('_serializer',)
 

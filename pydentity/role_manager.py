@@ -34,23 +34,13 @@ class RoleManager(Generic[TRole]):
             logger: Optional[logging.Logger] = None
     ) -> None:
         """
-        Constructs a new instance of RoleManager[TRole].
+        Constructs a new instance of ``RoleManager[TRole]``.
 
         :param store: The persistence store the manager will operate over.
         :param role_validators: A collection of validators for roles.
         :param key_normalizer: The normalizer to use when normalizing role names to keys.
-        :param errors: The IdentityErrorDescriber used to provider error messages.
+        :param errors: The ``IdentityErrorDescriber`` used to provider error messages.
         :param logger: The logger used to log messages, warnings and errors.
-
-        ## Example
-
-        from pydentity import RoleManager, RoleValidator, UpperLookupNormalizer
-
-        manager = RoleManager(
-            RoleStore(),
-            role_validators=[RoleValidator()],
-            key_normalizer=UpperLookupNormalizer()
-        )
         """
         if store is None:
             raise ArgumentNoneException('store')
@@ -64,7 +54,7 @@ class RoleManager(Generic[TRole]):
     @property
     def supports_role_claims(self) -> bool:
         """
-        Gets a flag indicating whether the underlying persistence store supports Claims for roles.
+        Gets a flag indicating whether the underlying persistence store supports ``Claims`` for roles.
 
         :return:
         """
@@ -122,7 +112,7 @@ class RoleManager(Generic[TRole]):
 
     async def role_exists(self, role_name: str) -> bool:
         """
-        Gets a flag indicating whether the specified role_name exists.
+        Gets a flag indicating whether the specified ``role_name`` exists.
 
         :param role_name: The role name whose existence should be checked.
         :return:
@@ -146,7 +136,7 @@ class RoleManager(Generic[TRole]):
 
     async def find_by_id(self, role_id: str) -> Optional[TRole]:
         """
-        Finds the role associated with the specified role_id if any.
+        Finds the role associated with the specified ``role_id`` if any.
 
         :param role_id: The role ID whose role should be returned.
         :return:
@@ -185,7 +175,7 @@ class RoleManager(Generic[TRole]):
 
     async def find_by_name(self, role_name: str) -> Optional[TRole]:
         """
-         Finds the role associated with the specified role_name if any.
+         Finds the role associated with the specified ``role_name`` if any.
 
         :param role_name: The name of the role to be returned.
         :return:

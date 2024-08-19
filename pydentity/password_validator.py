@@ -37,7 +37,7 @@ class PasswordValidator(IPasswordValidator[TUser], Generic[TUser]):
     def __init__(self, errors: IdentityErrorDescriber | None = None) -> None:
         """
 
-        :param errors: The :exc:`IdentityErrorDescriber` used to provider error messages.
+        :param errors: The ``IdentityErrorDescriber`` used to provider error messages.
         """
         self._describer = errors or IdentityErrorDescriber()
 
@@ -53,7 +53,7 @@ class PasswordValidator(IPasswordValidator[TUser], Generic[TUser]):
         if is_none_or_empty(password) or len(password) < options.required_length:
             errors.append(self._describer.PasswordTooShort(options.required_length))
 
-        if options.require_digit and not any(_is_digit(c) for c in password):
+        if options.required_digit and not any(_is_digit(c) for c in password):
             errors.append(self._describer.PasswordRequiresDigit())
 
         if options.required_lowercase and not any(_is_lower(c) for c in password):
