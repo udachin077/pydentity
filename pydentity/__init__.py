@@ -13,8 +13,10 @@ from pydentity.password_hasher import (
 from pydentity.password_validator import PasswordValidator
 from pydentity.token_provider import (
     TotpSecurityStampBasedTokenProvider,
+    DataProtectorTokenProvider,
     EmailTokenProvider,
-    PhoneNumberTokenProvider
+    PhoneNumberTokenProvider,
+    AuthenticatorTokenProvider
 )
 from pydentity.user_claims_principal_factory import UserClaimsPrincipalFactory
 from pydentity.user_login_info import UserLoginInfo

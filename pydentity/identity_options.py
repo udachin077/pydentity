@@ -1,6 +1,7 @@
 import string
 from collections.abc import Iterable
 from datetime import timedelta
+from typing import Final
 
 from pydentity.abc import IUserTwoFactorTokenProvider
 from pydentity.security.claims import ClaimTypes
@@ -131,20 +132,28 @@ class TokenOptions:
         'authenticator_token_provider',
         'totp_interval',
         'provider_map',
+        'DEFAULT_PROVIDER',
+        'DEFAULT_EMAIL_PROVIDER',
+        'DEFAULT_PHONE_PROVIDER',
+        'DEFAULT_AUTHENTICATION_PROVIDER',
     )
 
     def __init__(self) -> None:
-        self.authenticator_token_provider: str = "Authenticator"
+        self.DEFAULT_PROVIDER: Final[str] = "Default"
+        self.DEFAULT_EMAIL_PROVIDER: Final[str] = "Email"
+        self.DEFAULT_PHONE_PROVIDER: Final[str] = "Phone"
+        self.DEFAULT_AUTHENTICATION_PROVIDER: Final[str] = "Authenticator"
+        self.authenticator_token_provider: str = self.DEFAULT_AUTHENTICATION_PROVIDER
         """Gets or sets the token provider used to validate two factor sign ins with an authenticator."""
-        self.change_email_token_provider: str = "Email"
+        self.change_email_token_provider: str = self.DEFAULT_EMAIL_PROVIDER
         """Gets or sets the token provider used to generate tokens used in email change confirmation emails."""
-        self.change_phone_number_token_provider: str = "Phone"
+        self.change_phone_number_token_provider: str = self.DEFAULT_PHONE_PROVIDER
         """Gets or sets the token provider used to generate tokens used when changing phone numbers."""
-        self.email_confirmation_token_provider: str = "Email"
+        self.email_confirmation_token_provider: str = self.DEFAULT_EMAIL_PROVIDER
         """Gets or sets the token provider used to generate tokens used in account confirmation emails."""
-        self.phone_number_confirmation_token_provider: str = "Phone"
+        self.phone_number_confirmation_token_provider: str = self.DEFAULT_PHONE_PROVIDER
         """Gets or sets the token provider used to generate tokens used in account confirmation phone number."""
-        self.password_reset_token_provider: str = "Default"
+        self.password_reset_token_provider: str = self.DEFAULT_PROVIDER
         """Gets or sets the token provider used to generate tokens used in password reset emails."""
         self.totp_interval = 180
         """Gets or sets the totp interval. Defaults to ``180`` seconds."""
@@ -195,6 +204,8 @@ class IdentityOptions:
         'user',
     )
 
+    __instance: 'IdentityOptions' = None
+
     def __init__(self) -> None:
         self.claims_identity: ClaimsIdentityOptions = ClaimsIdentityOptions()
         """Gets or sets the ``ClaimsIdentityOptions`` for the identity system."""
@@ -208,3 +219,8 @@ class IdentityOptions:
         """Gets or sets the ``TokenOptions`` for the identity system."""
         self.user: UserOptions = UserOptions()
         """Gets or sets the ``UserOptions`` for the identity system."""
+
+    def __new__(cls):
+        if cls.__instance is None:
+            cls.__instance = cls()
+        return cls.__instance

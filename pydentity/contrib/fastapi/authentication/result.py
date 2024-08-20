@@ -2,6 +2,8 @@ from pydentity.security.claims import ClaimsPrincipal
 
 
 class AuthenticationResult:
+    __slots__ = ('_principal', '_properties',)
+
     def __init__(self, principal: ClaimsPrincipal, properties: dict):
         self._principal = principal
         self._properties = properties

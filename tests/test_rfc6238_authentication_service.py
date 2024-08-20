@@ -18,7 +18,7 @@ async def test_generate_and_validate_code(security_token_1, security_token_2, mo
         modifier_1.encode(),
         interval
     )
-    await asyncio.sleep(3)
+    await asyncio.sleep(2)
     assert Rfc6238AuthenticationService.validate_code(
         security_token_2.encode(),
         code,

@@ -1,11 +1,11 @@
 from abc import abstractmethod, ABC
 from typing import TYPE_CHECKING, Optional
 
+from pydentity.contrib.fastapi.authentication.result import AuthenticationResult
 from pydentity.security.claims import ClaimsPrincipal
 
 if TYPE_CHECKING:
-    from pydentity.authentication.scheme import AuthenticationScheme
-    from pydentity.authentication.result import AuthenticationResult
+    from pydentity.contrib.fastapi.authentication.scheme import AuthenticationScheme
 
 __all__ = ('IAuthenticationHandler', 'IAuthenticationSchemeProvider',)
 
@@ -20,7 +20,7 @@ class IAuthenticationHandler(ABC):
         pass
 
     @abstractmethod
-    async def authenticate(self, context, scheme: str) -> 'AuthenticationResult':
+    async def authenticate(self, context, scheme: str) -> AuthenticationResult:
         pass
 
 

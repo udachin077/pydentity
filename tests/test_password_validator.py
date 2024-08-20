@@ -25,7 +25,7 @@ def validator():
 @pytest.fixture
 def options():
     options = IdentityOptions()
-    options.password.require_digit = False
+    options.password.required_digit = False
     options.password.required_length = 1
     options.password.required_unique_chars = 1
     options.password.required_lowercase = False
@@ -41,7 +41,7 @@ def options():
 })
 async def test_validate_require_digit(password, result, user_manager, validator, options):
     user_manager.options = options
-    user_manager.options.password.require_digit = True
+    user_manager.options.password.required_digit = True
     validation_result = await validator.validate(user_manager, password)
     assert validation_result.succeeded is result
 

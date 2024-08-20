@@ -38,14 +38,6 @@ class Claim:
     def __repr__(self) -> str:
         return f'<{self.__class__.__name__} {self.type}:{self.value} at {id(self)}>'
 
-    def __eq__(self, other: object) -> bool:
-        if not isinstance(other, Claim):
-            raise TypeError('the operand must be of type Claim')
-        return self.type == other.type and self.value == other.value and (self.subject is other.subject)
-
-    def __hash__(self) -> int:
-        return hash(f'{self.type}:{self.value}:{self.subject}')
-
 
 class ClaimsIdentity:
     __slots__ = ('_authentication_type', '_claims', '_name_claim_type', '_role_claim_type',)
@@ -453,14 +445,8 @@ class ClaimsPrincipal:
 
         match mode:
             case 'all':
-                for role in roles:
-                    if not self.is_in_role(role):
-                        return False
-                return True
+                return all(False for role in roles if not self.is_in_roles(role))
             case 'any':
-                for role in roles:
-                    if self.is_in_role(role):
-                        return True
-                return False
+                return any(True for role in roles if self.is_in_roles(role))
             case _:
                 raise ValueError('the "mode" must be "all" or "any"')

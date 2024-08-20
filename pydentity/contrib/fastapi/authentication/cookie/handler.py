@@ -1,12 +1,11 @@
 import sys
+from collections.abc import Iterable
 from functools import lru_cache
-from typing import Iterable
-
 from itsdangerous.url_safe import URLSafeSerializer
 
-from pydentity.abc.context import HttpContext
-from pydentity.authentication.abc import IAuthenticationHandler
-from pydentity.authentication.result import AuthenticationResult
+from pydentity.http.context import HttpContext
+from pydentity.contrib.fastapi.authentication.abc import IAuthenticationHandler
+from pydentity.contrib.fastapi.authentication.result import AuthenticationResult
 from pydentity.security.claims import ClaimsPrincipal
 from pydentity.security.claims.serializer import ClaimsPrincipalSerializer
 from pydentity.utils import datetime
@@ -25,8 +24,11 @@ class CookieAuthenticationHandler(IAuthenticationHandler):
         self._serializer: URLSafeSerializer = serializer or URLSafeSerializer(secret_key)
 
     async def sign_in(self, context: HttpContext, scheme: str, principal: ClaimsPrincipal, **properties):
+        context.response.headers['Cache-Control'] = 'no-cache,no-store'
+        context.response.headers['Pragma'] = 'no-cache'
         cookies = self.__encode_principal_properties(scheme, principal, **properties)
         expires = datetime.utcnow().add_days(7) if properties.get('is_persistent', False) else None
+
         for key, value in cookies.items():
             context.response.set_cookie(
                 key=key,

@@ -1,5 +1,6 @@
+from collections.abc import Callable
 from datetime import datetime
-from typing import TypeVar, Protocol, Optional, Callable, Union
+from typing import TypeVar, Protocol, Optional, Union
 from uuid import UUID
 
 __all__ = (
