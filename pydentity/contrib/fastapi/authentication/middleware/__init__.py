@@ -1,11 +1,12 @@
 from collections.abc import Iterable, Callable
 from re import compile as re_compile, Pattern as re_Pattern
 
-from starlette.authentication import AuthenticationError
-from starlette.datastructures import URL
-from starlette.requests import Request, HTTPConnection
-from starlette.responses import Response, PlainTextResponse
+from fastapi.datastructures import URL
+from fastapi.requests import Request, HTTPConnection
+from fastapi.responses import Response, PlainTextResponse
 from starlette.types import ASGIApp, Scope, Receive, Send
+
+from pydentity.contrib.fastapi.authentication.exc import AuthenticationError
 
 
 class AuthenticationMiddleware:
@@ -16,7 +17,7 @@ class AuthenticationMiddleware:
             app: ASGIApp,
             backend: AuthenticationBackend,
             excluded_urls: Iterable[re_Pattern | str] | None = None,
-            on_error: Callable[[HTTPConnection, AuthenticationError], Response] | None = None
+            on_error: Callable[[Request, AuthenticationError], Response] | None = None
     ):
         self.app = app
         self.backend = backend

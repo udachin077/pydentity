@@ -39,9 +39,9 @@ class ClaimsAuthorizationRequirement(AuthorizationHandler):
 
     async def handle(self, context: AuthorizationHandlerContext):
         if context.user:
-            predicate = lambda c: c.type == self.claim_type
+            predicate = lambda c: c.type == self.claim_type  # noqa
             if self.allowed_values:
-                predicate = lambda c: c.type == self.claim_type and c.value in self.allowed_values
+                predicate = lambda c: c.type == self.claim_type and c.value in self.allowed_values  # noqa
 
             if any(True for c in context.user.claims if predicate(c)):
                 context.succeed()

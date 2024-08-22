@@ -1,2 +1,1 @@
-class AuthenticationError(Exception):
-    pass
+from starlette.authentication import AuthenticationError as AuthenticationError  # noqa

@@ -2,6 +2,7 @@ from collections.abc import Iterable, Callable
 
 from fastapi import FastAPI
 from fastapi.responses import PlainTextResponse
+from starlette.types import ExceptionHandler
 
 from pydentity import (
     IdentityOptions,
@@ -111,26 +112,42 @@ class PydentityBuilder:
         self.services.add_service(SignInManager, dep.SignInManager)
         return IdentityBuilder(user, role, self.services).add_default_token_providers()
 
-    def add_authentication(self, configure: Callable[[AuthenticationOptions], None] | None = None):
+    def add_authentication(
+            self,
+            configure: Callable[[AuthenticationOptions], None] | None = None,
+            on_error: ExceptionHandler | None = None
+    ):
         _options = AuthenticationOptions()
         if configure:
             configure(_options)
 
-        @self.app.exception_handler(AuthenticationError)
-        def authorization_error(request, exc):
-            return PlainTextResponse("Unauthorized", status_code=401)
+        if on_error:
+            self.app.add_exception_handler(AuthorizationError, on_error)
+        else:
+            self.app.add_exception_handler(
+                AuthenticationError,
+                lambda req, exc: PlainTextResponse('Unauthorized', status_code=401)
+            )
 
         AuthenticationSchemeProvider.options = _options
         return AuthenticationBuilder(_options)
 
-    def add_authorization(self, configure: Callable[[AuthorizationOptions], None] | None = None):
+    def add_authorization(
+            self,
+            configure: Callable[[AuthorizationOptions], None] | None = None,
+            on_error: ExceptionHandler | None = None
+    ):
         _options = AuthorizationOptions()
         if configure:
             configure(_options)
 
-        @self.app.exception_handler(AuthorizationError)
-        def authorization_error(request, exc):
-            return PlainTextResponse("Access denied", status_code=403)
+        if on_error:
+            self.app.add_exception_handler(AuthorizationError, on_error)
+        else:
+            self.app.add_exception_handler(
+                AuthorizationError,
+                lambda req, exc: PlainTextResponse('Access denied', status_code=403)
+            )
 
         AuthorizationProvider.options = _options
         return AuthorizationBuilder(_options)

@@ -33,21 +33,24 @@ class AuthenticationOptions:
     def add_scheme(
             self,
             name: str,
-            _scheme: AuthenticationScheme | Callable[[AuthenticationSchemeBuilder], None]
+            scheme_or_builder: AuthenticationScheme | Callable[[AuthenticationSchemeBuilder], None]
     ) -> None:
         if not name:
             raise ArgumentNoneException('name')
-        if not _scheme:
-            raise ArgumentNoneException('_scheme')
+        if not scheme_or_builder:
+            raise ArgumentNoneException('scheme_or_builder')
 
         if name in self._scheme_map:
             raise InvalidOperationException(f'Scheme already exists: {name}.')
 
-        if isinstance(_scheme, AuthenticationScheme):
-            self._scheme_map[name] = _scheme
-        elif isfunction(_scheme):
-            builder = AuthenticationSchemeBuilder()
-            _scheme(builder)
+        if isinstance(scheme_or_builder, AuthenticationScheme):
+            self._scheme_map[name] = scheme_or_builder
+
+        elif isfunction(scheme_or_builder):
+            builder = AuthenticationSchemeBuilder(name)
+            scheme_or_builder(builder)
             self._scheme_map[name] = builder.build()
+
         else:
             raise NotImplemented
+

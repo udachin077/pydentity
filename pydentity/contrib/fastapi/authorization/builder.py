@@ -25,7 +25,7 @@ class AuthorizationBuilder:
     def add_policy(
             self,
             name: str,
-            poc: AuthorizationPolicy | Callable[[AuthorizationPolicyBuilder], None]
+            policy_or_builder: AuthorizationPolicy | Callable[[AuthorizationPolicyBuilder], None]
     ) -> 'AuthorizationBuilder':
-        self._options.add_policy(name, poc)
+        self._options.add_policy(name, policy_or_builder)
         return self
