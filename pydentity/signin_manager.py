@@ -3,24 +3,88 @@ from collections.abc import Iterable
 from typing import Generic
 
 from pydentity.abc import IUserClaimsPrincipalFactory, IUserConfirmation
-from pydentity.http.context import HttpContext
-from pydentity.contrib.fastapi.authentication.abc import IAuthenticationSchemeProvider
-from pydentity.default_user_confirmation import DefaultUserConfirmation
+from pydentity.authentication.abc import IAuthenticationSchemeProvider
+from pydentity.user_confirmation import DefaultUserConfirmation
 from pydentity.exc import ArgumentNoneException
+from pydentity.http.context import HttpContext
 from pydentity.identity_constants import IdentityConstants
 from pydentity.identity_error import IdentityError
 from pydentity.identity_options import IdentityOptions
 from pydentity.identity_result import IdentityResult
 from pydentity.security.claims import ClaimsPrincipal, Claim, ClaimTypes, ClaimsIdentity
-from pydentity.signin_result import SignInResult
 from pydentity.types import TUser
 from pydentity.user_manager import UserManager
 
 
 class TwoFactorAuthenticationInfo:
+    __slots__ = ('user', 'login_provider',)
+
     def __init__(self, user: TUser, login_provider: str):
         self.user = user
         self.login_provider = login_provider
+
+
+class SignInResult:
+    __slots__ = ('_succeeded', '_is_locked_out', '_is_not_allowed', '_requires_two_factor',)
+
+    def __init__(
+            self,
+            succeeded: bool = False,
+            is_locked_out: bool = False,
+            is_not_allowed: bool = False,
+            requires_two_factor: bool = False
+    ):
+        self._succeeded = succeeded
+        self._is_locked_out = is_locked_out
+        self._is_not_allowed = is_not_allowed
+        self._requires_two_factor = requires_two_factor
+
+    @property
+    def is_locked_out(self) -> bool:
+        return self._is_locked_out
+
+    @property
+    def succeeded(self) -> bool:
+        return self._succeeded
+
+    @property
+    def is_not_allowed(self) -> bool:
+        return self._is_not_allowed
+
+    @property
+    def requires_two_factor(self) -> bool:
+        return self._requires_two_factor
+
+    @staticmethod
+    def success() -> 'SignInResult':
+        return SignInResult(succeeded=True)
+
+    @staticmethod
+    def locked_out() -> 'SignInResult':
+        return SignInResult(is_locked_out=True)
+
+    @staticmethod
+    def not_allowed() -> 'SignInResult':
+        return SignInResult(is_not_allowed=True)
+
+    @staticmethod
+    def two_factor_required() -> 'SignInResult':
+        return SignInResult(requires_two_factor=True)
+
+    @staticmethod
+    def failed() -> 'SignInResult':
+        return SignInResult()
+
+    def __str__(self) -> str:
+        if self._is_locked_out:
+            return 'Locked out'
+        if self.is_not_allowed:
+            return 'Not Allowed'
+        if self.requires_two_factor:
+            return 'Requires Two-Factor'
+        if self._succeeded:
+            return 'Succeeded'
+        return 'Failed'
 
 
 class SignInManager(Generic[TUser]):
@@ -48,12 +112,12 @@ class SignInManager(Generic[TUser]):
             options: IdentityOptions | None = None,
             logger: logging.Logger | None = None
     ):
-        if user_manager is None:
+        if not user_manager:
             raise ArgumentNoneException('user_manager')
-        if claims_factory is None:
+        if not claims_factory:
             raise ArgumentNoneException('claims_factory')
 
-        self.user_manager: UserManager[TUser] = user_manager
+        self.user_manager: UserManager = user_manager
         self.options: IdentityOptions = options or IdentityOptions()
         self.claims_factory: IUserClaimsPrincipalFactory[TUser] = claims_factory
         self.logger: logging.Logger = logger or logging.Logger(self.__class__.__name__)
@@ -167,10 +231,10 @@ class SignInManager(Generic[TUser]):
         """
         await self.context.sign_out(self.authentication_scheme)
 
-        if (await self._schemes.get_scheme(IdentityConstants.ExternalScheme)) is not None:
+        if await self._schemes.get_scheme(IdentityConstants.ExternalScheme):
             await self.context.sign_out(IdentityConstants.ExternalScheme)
 
-        if (await self._schemes.get_scheme(IdentityConstants.TwoFactorUserIdScheme)) is not None:
+        if await self._schemes.get_scheme(IdentityConstants.TwoFactorUserIdScheme):
             await self.context.sign_out(IdentityConstants.TwoFactorUserIdScheme)
 
     async def validate_security_stamp(self, principal: ClaimsPrincipal | None) -> TUser | None:
@@ -248,7 +312,7 @@ class SignInManager(Generic[TUser]):
         """
         user = await self.user_manager.find_by_name(username)
 
-        if user is None:
+        if not user:
             return SignInResult.failed()
 
         attempt = await self.check_password_sign_in(user, password, lockout_on_failure)
@@ -272,7 +336,7 @@ class SignInManager(Generic[TUser]):
         :param lockout_on_failure: Flag indicating if the user account should be locked if the sign in fails.
         :return:
         """
-        if user is None:
+        if not user:
             raise ArgumentNoneException('user')
 
         if error := await self._pre_sign_in_check(user):
@@ -321,10 +385,9 @@ class SignInManager(Generic[TUser]):
         return result.principal and result.principal.find_first_value(ClaimTypes.Name) == user_id
 
     async def remember_two_factor_client(self, user: TUser):
-        principal = await self._store_remember_client(user)
         await self.context.sign_in(
             IdentityConstants.TwoFactorRememberMeScheme,
-            principal,
+            await self._store_remember_client(user),
             is_persistent=True
         )
 
@@ -333,7 +396,7 @@ class SignInManager(Generic[TUser]):
 
     async def two_factor_recovery_code_sign_in(self, recovery_code: str) -> SignInResult:
         two_factor_info = await self.retrieve_two_factor_info()
-        if two_factor_info is None:
+        if not two_factor_info:
             return SignInResult.failed()
 
         result = await self.user_manager.redeem_two_factor_recovery_code(two_factor_info.user, recovery_code)
@@ -366,10 +429,10 @@ class SignInManager(Generic[TUser]):
         if two_factor_info.login_provider:
             claims.append(Claim(ClaimTypes.AuthenticationMethod, two_factor_info.login_provider))
 
-        if (await self._schemes.get_scheme(IdentityConstants.ExternalScheme)) is not None:
+        if await self._schemes.get_scheme(IdentityConstants.ExternalScheme):
             await self.context.sign_out(IdentityConstants.ExternalScheme)
 
-        if (await self._schemes.get_scheme(IdentityConstants.TwoFactorUserIdScheme)) is not None:
+        if await self._schemes.get_scheme(IdentityConstants.TwoFactorUserIdScheme):
             await self.context.sign_out(IdentityConstants.TwoFactorUserIdScheme)
             if remember_client:
                 await self.remember_two_factor_client(user)
@@ -393,7 +456,7 @@ class SignInManager(Generic[TUser]):
         :return:
         """
         two_factor_info = await self.retrieve_two_factor_info()
-        if two_factor_info is None:
+        if not two_factor_info:
             return SignInResult.failed()
 
         user = two_factor_info.user
@@ -430,7 +493,7 @@ class SignInManager(Generic[TUser]):
         :return:
         """
         two_factor_info = await self.retrieve_two_factor_info()
-        if two_factor_info is None:
+        if not two_factor_info:
             return SignInResult.failed()
 
         user = two_factor_info.user
@@ -507,7 +570,7 @@ class SignInManager(Generic[TUser]):
         if login_provider:
             await self.context.sign_out(IdentityConstants.ExternalScheme)
 
-        if login_provider is None:
+        if not login_provider:
             await self.sign_in_with_claims(
                 user,
                 is_persistent,
@@ -587,7 +650,7 @@ class SignInManager(Generic[TUser]):
 
         if not result.succeeded:
             return IdentityResult.failed(
-                IdentityError('ResetLockout', 'ResetLockout failed.'),
+                IdentityError('ResetLockout', 'Reset lockout failed.'),
                 *result.errors
             )
 

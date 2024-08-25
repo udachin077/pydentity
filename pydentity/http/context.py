@@ -1,44 +1,38 @@
-from typing import Annotated
+from abc import abstractmethod
 
-from fastapi import Depends
-from fastapi.requests import Request
-from fastapi.responses import Response
-
-from pydentity.contrib.fastapi.authentication.abc import IAuthenticationHandler, IAuthenticationSchemeProvider
-from pydentity.contrib.fastapi.authentication.provider import AuthenticationSchemeProvider
-from pydentity.contrib.fastapi.authentication.result import AuthenticationResult
+from pydentity.authentication import IAuthenticationSchemeProvider, AuthenticationResult, IAuthenticationHandler
 from pydentity.exc import InvalidOperationException
 from pydentity.security.claims import ClaimsPrincipal
 
 
-class HttpContext:
-    __slots__ = ('__request', '__response', '__schemes',)
+class HttpContext[TRequest, TResponse]:
+    __slots__ = ('_request', '_response', '_schemes',)
 
     def __init__(
             self,
-            request: Request,
-            response: Response,
-            schemes: Annotated[IAuthenticationSchemeProvider, Depends(AuthenticationSchemeProvider)]
-    ):
-        self.__request = request
-        self.__response = response
-        self.__schemes = schemes
+            request: TRequest,
+            response: TResponse,
+            schemes: IAuthenticationSchemeProvider
+    ) -> None:
+        self._schemes = schemes
+        self._request = request
+        self._response = response
 
     @property
-    def request(self) -> Request:
-        return self.__request
+    def request(self) -> TRequest:
+        return self._request
 
     @property
-    def response(self) -> Response:
-        return self.__response
+    def response(self) -> TResponse:
+        return self._response
 
     @property
     def user(self) -> ClaimsPrincipal | None:
         return self.request.user
 
     @user.setter
-    def user(self, value: ClaimsPrincipal | None):
-        self.request.scope['user'] = value
+    def user(self, value: ClaimsPrincipal | None) -> None:
+        self.request.scope['user'] = value  # for FastAPI
 
     async def authenticate(self, scheme: str) -> AuthenticationResult:
         return await (await self.get_authentication_service(scheme)).authenticate(self, scheme)
@@ -50,6 +44,6 @@ class HttpContext:
         await (await self.get_authentication_service(scheme)).sign_out(self, scheme)
 
     async def get_authentication_service(self, name: str) -> IAuthenticationHandler:
-        if scheme := await self.__schemes.get_scheme(name):
+        if scheme := await self._schemes.get_scheme(name):
             return scheme.handler
         raise InvalidOperationException(f'Scheme {name} not registered.')

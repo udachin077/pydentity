@@ -1,4 +1,4 @@
-from pydentity.abc.protector import IPersonalDataProtector
+from pydentity.abc.protector import IPersonalDataProtector, ILookupProtector
 from pydentity.abc.lookup_normalizer import ILookupNormalizer
 from pydentity.abc.password_hasher import PasswordVerificationResult, IPasswordHasher
 from pydentity.abc.user_confirmation import IUserConfirmation

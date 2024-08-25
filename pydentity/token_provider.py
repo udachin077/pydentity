@@ -5,7 +5,6 @@ from typing import TYPE_CHECKING, Generic, override
 from itsdangerous import URLSafeTimedSerializer, BadSignature, SignatureExpired
 
 from pydentity.abc import IUserTwoFactorTokenProvider
-from pydentity.exc import ArgumentNoneException
 from pydentity.rfc6238service import Rfc6238AuthenticationService
 from pydentity.types import TUser
 from pydentity.utils import is_none_or_empty
@@ -41,11 +40,6 @@ class TotpSecurityStampBasedTokenProvider(IUserTwoFactorTokenProvider[TUser], Ge
         :param user: The user a token should be generated for.
         :return:
         """
-        if manager is None:
-            raise ArgumentNoneException('manager')
-        if user is None:
-            raise ArgumentNoneException('user')
-
         security_token = await manager.create_security_token(user)
         modifier = await self.get_user_modifier(manager, purpose, user)
         return Rfc6238AuthenticationService.generate_code(
@@ -64,11 +58,6 @@ class TotpSecurityStampBasedTokenProvider(IUserTwoFactorTokenProvider[TUser], Ge
         :param user: The user a token should be validated for.
         :return:
         """
-        if manager is None:
-            raise ArgumentNoneException('manager')
-        if user is None:
-            raise ArgumentNoneException('user')
-
         security_token = await manager.create_security_token(user)
         modifier = await self.get_user_modifier(manager, purpose, user)
         return bool(security_token and Rfc6238AuthenticationService.validate_code(
@@ -88,11 +77,6 @@ class TotpSecurityStampBasedTokenProvider(IUserTwoFactorTokenProvider[TUser], Ge
         :param user: The user a token should be generated for.
         :return:
         """
-        if manager is None:
-            raise ArgumentNoneException('manager')
-        if user is None:
-            raise ArgumentNoneException('user')
-
         user_id = await manager.get_user_id(user)
         return f'Totp:{purpose}:{user_id}'.encode()
 
@@ -102,21 +86,11 @@ class EmailTokenProvider(TotpSecurityStampBasedTokenProvider[TUser], Generic[TUs
 
     @override
     async def can_generate_two_factor(self, manager: 'UserManager[TUser]', user: TUser) -> bool:
-        if manager is None:
-            raise ArgumentNoneException('manager')
-        if user is None:
-            raise ArgumentNoneException('user')
-
         email = await manager.get_email(user)
         return not is_none_or_empty(email) and await manager.is_email_confirmed(user)
 
     @override
     async def get_user_modifier(self, manager: 'UserManager[TUser]', purpose: str, user: TUser) -> bytes:
-        if manager is None:
-            raise ArgumentNoneException('manager')
-        if user is None:
-            raise ArgumentNoneException('user')
-
         email = await manager.get_email(user)
         return f'Email:{purpose}:{email}'.encode()
 
@@ -127,21 +101,11 @@ class PhoneNumberTokenProvider(TotpSecurityStampBasedTokenProvider[TUser], Gener
 
     @override
     async def can_generate_two_factor(self, manager: 'UserManager[TUser]', user: TUser) -> bool:
-        if manager is None:
-            raise ArgumentNoneException('manager')
-        if user is None:
-            raise ArgumentNoneException('user')
-
         phone_number = await manager.get_phone_number(user)
         return not is_none_or_empty(phone_number) and await manager.is_phone_number_confirmed(user)
 
     @override
     async def get_user_modifier(self, manager: 'UserManager[TUser]', purpose: str, user: TUser) -> bytes:
-        if manager is None:
-            raise ArgumentNoneException('manager')
-        if user is None:
-            raise ArgumentNoneException('user')
-
         phone_number = await manager.get_phone_number(user)
         return f'PhoneNumber:{purpose}:{phone_number}'.encode()
 
@@ -151,38 +115,23 @@ class AuthenticatorTokenProvider(IUserTwoFactorTokenProvider[TUser], Generic[TUs
         return ''
 
     async def validate(self, manager: 'UserManager[TUser]', purpose: str, token: str, user: TUser) -> bool:
-        if manager is None:
-            raise ArgumentNoneException('manager')
-        if user is None:
-            raise ArgumentNoneException('user')
-
         key = await manager.get_authenticator_key(user)
         if is_none_or_empty(key):
             return False
         return Rfc6238AuthenticationService.validate_code(key.encode(), token)
 
     async def can_generate_two_factor(self, manager: 'UserManager[TUser]', user: TUser) -> bool:
-        if manager is None:
-            raise ArgumentNoneException('manager')
-        if user is None:
-            raise ArgumentNoneException('user')
-
         key = await manager.get_authenticator_key(user)
         return not is_none_or_empty(key)
 
 
 class DataProtectorTokenProvider(IUserTwoFactorTokenProvider[TUser], Generic[TUser]):
     def __init__(self, purpose: str | None = None, token_lifespan: timedelta = timedelta(minutes=10)):
-        self._serializer = URLSafeTimedSerializer(purpose or "DataProtectorTokenProvider")
+        self._serializer = URLSafeTimedSerializer(purpose or 'DataProtectorTokenProvider')
         self._token_lifespan = int(token_lifespan.total_seconds())
         self.logger = logging.Logger(self.__class__.__name__)
 
     async def generate(self, manager: 'UserManager[TUser]', purpose: str, user: TUser) -> str:
-        if manager is None:
-            raise ArgumentNoneException('manager')
-        if user is None:
-            raise ArgumentNoneException('user')
-
         user_id = await manager.get_user_id(user)
         stamp = None
         if manager.supports_user_security_stamp:
@@ -190,8 +139,8 @@ class DataProtectorTokenProvider(IUserTwoFactorTokenProvider[TUser], Generic[TUs
 
         data = {
             'user_id': user_id,
-            'purpose': purpose or "",
-            'stamp': stamp or ""
+            'purpose': purpose or '',
+            'stamp': stamp or ''
         }
 
         return self._serializer.dumps(data)
@@ -200,38 +149,33 @@ class DataProtectorTokenProvider(IUserTwoFactorTokenProvider[TUser], Generic[TUs
         return False
 
     async def validate(self, manager: 'UserManager[TUser]', purpose: str, token: str, user: TUser) -> bool:
-        if manager is None:
-            raise ArgumentNoneException('manager')
-        if user is None:
-            raise ArgumentNoneException('user')
-
         try:
             data = self._serializer.loads(token, max_age=self._token_lifespan)
         except BadSignature:
-            self.logger.error("Bad signature")
+            self.logger.error('Bad signature')
             return False
         except SignatureExpired:
-            self.logger.error("Invalid expiration time")
+            self.logger.error('Invalid expiration time')
             return False
         else:
             try:
                 if data['user_id'] != await manager.get_user_id(user):
-                    self.logger.error("User ID not equals")
+                    self.logger.error('User ID not equals')
                     return False
 
                 if data['purpose'] != purpose:
-                    self.logger.error("Purpose not equals")
+                    self.logger.error('Purpose not equals')
                     return False
 
                 if manager.supports_user_security_stamp:
                     is_equals_security_stamp = data['stamp'] != await manager.get_security_stamp(user)
                     if not is_equals_security_stamp:
-                        self.logger.error("Security stamp not equals")
+                        self.logger.error('Security stamp not equals')
                     return is_equals_security_stamp
 
-                stamp_is_empty = data['stamp'] == ""
+                stamp_is_empty = data['stamp'] == ''
                 if not stamp_is_empty:
-                    self.logger.error("Security stamp is not empty")
+                    self.logger.error('Security stamp is not empty')
                 return stamp_is_empty
 
             except KeyError as ex:

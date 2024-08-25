@@ -21,7 +21,7 @@ class RoleValidator(IRoleValidator[TRole], Generic[TRole]):
 
         :param errors: The ``IdentityErrorDescriber`` used to provider error messages.
         """
-        self._describer = errors or IdentityErrorDescriber()
+        self._errors = errors or IdentityErrorDescriber()
 
     async def validate(self, manager: 'RoleManager[TRole]', role: TRole) -> IdentityResult:
         if manager is None:
@@ -44,6 +44,6 @@ class RoleValidator(IRoleValidator[TRole], Generic[TRole]):
             assert role_name is not None
             if owner := await manager.find_by_name(role_name):
                 if await manager.get_role_id(owner) != await manager.get_role_id(role):
-                    errors.append(self._describer.DuplicateRoleName(role_name))
+                    errors.append(self._errors.DuplicateRoleName(role_name))
         else:
-            errors.append(self._describer.InvalidRoleName('None'))
+            errors.append(self._errors.InvalidRoleName('None'))

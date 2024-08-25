@@ -132,17 +132,14 @@ class TokenOptions:
         'authenticator_token_provider',
         'totp_interval',
         'provider_map',
-        'DEFAULT_PROVIDER',
-        'DEFAULT_EMAIL_PROVIDER',
-        'DEFAULT_PHONE_PROVIDER',
-        'DEFAULT_AUTHENTICATION_PROVIDER',
     )
 
+    DEFAULT_PROVIDER: Final[str] = "Default"
+    DEFAULT_EMAIL_PROVIDER: Final[str] = "Email"
+    DEFAULT_PHONE_PROVIDER: Final[str] = "Phone"
+    DEFAULT_AUTHENTICATION_PROVIDER: Final[str] = "Authenticator"
+
     def __init__(self) -> None:
-        self.DEFAULT_PROVIDER: Final[str] = "Default"
-        self.DEFAULT_EMAIL_PROVIDER: Final[str] = "Email"
-        self.DEFAULT_PHONE_PROVIDER: Final[str] = "Phone"
-        self.DEFAULT_AUTHENTICATION_PROVIDER: Final[str] = "Authenticator"
         self.authenticator_token_provider: str = self.DEFAULT_AUTHENTICATION_PROVIDER
         """Gets or sets the token provider used to validate two factor sign ins with an authenticator."""
         self.change_email_token_provider: str = self.DEFAULT_EMAIL_PROVIDER
@@ -204,8 +201,6 @@ class IdentityOptions:
         'user',
     )
 
-    __instance: 'IdentityOptions' = None
-
     def __init__(self) -> None:
         self.claims_identity: ClaimsIdentityOptions = ClaimsIdentityOptions()
         """Gets or sets the ``ClaimsIdentityOptions`` for the identity system."""
@@ -219,8 +214,3 @@ class IdentityOptions:
         """Gets or sets the ``TokenOptions`` for the identity system."""
         self.user: UserOptions = UserOptions()
         """Gets or sets the ``UserOptions`` for the identity system."""
-
-    def __new__(cls):
-        if cls.__instance is None:
-            cls.__instance = cls()
-        return cls.__instance

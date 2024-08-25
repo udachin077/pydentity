@@ -1,4 +1,4 @@
-import datetime
+import datetime as dt
 import logging
 import random
 import uuid
@@ -43,6 +43,7 @@ from pydentity.resources import Resources
 from pydentity.security.claims import ClaimsPrincipal, Claim, ClaimTypes
 from pydentity.types import TUser
 from pydentity.user_login_info import UserLoginInfo
+from pydentity.utils import datetime
 
 __all__ = ('UserManager',)
 
@@ -1272,7 +1273,7 @@ class UserManager(Generic[TUser]):
         lockout_time = await store.get_lockout_end_date(user)
         if lockout_time is None:
             return False
-        return datetime.datetime.now(datetime.UTC).timestamp() <= lockout_time.timestamp()
+        return datetime.utcnow().timestamp() <= lockout_time.timestamp()
 
     async def set_lockout_enable(self, user: TUser, enabled: bool) -> IdentityResult:
         """
@@ -1300,7 +1301,7 @@ class UserManager(Generic[TUser]):
 
         return await self._get_user_lockout_store().get_lockout_enabled(user)
 
-    async def get_lockout_end_date(self, user: TUser) -> Optional[datetime.datetime]:
+    async def get_lockout_end_date(self, user: TUser) -> Optional[dt.datetime]:
         """
         Gets the last datetime a user's last lockout expired, if any.
         A time value in the past indicates a user is not currently locked out.
@@ -1313,7 +1314,7 @@ class UserManager(Generic[TUser]):
 
         return await self._get_user_lockout_store().get_lockout_end_date(user)
 
-    async def set_lockout_end_date(self, user: TUser, lockout_end: datetime.datetime) -> IdentityResult:
+    async def set_lockout_end_date(self, user: TUser, lockout_end: dt.datetime) -> IdentityResult:
         """
         Locks out a user until the specified end date has passed.
         Setting an end date in the past immediately unlocks a user.
@@ -1355,7 +1356,7 @@ class UserManager(Generic[TUser]):
         self.logger.warning('User is locked out.')
         await store.set_lockout_end_date(
             user,
-            datetime.datetime.now(datetime.UTC) + self.options.lockout.default_lockout_timespan
+            datetime.utcnow().add(self.options.lockout.default_lockout_timespan)
         )
         await store.reset_access_failed_count(user)
         return await self._update_user(user)

@@ -1,5 +1,5 @@
 from pydentity.abc import PasswordVerificationResult
-from pydentity.password_hasher import OldPasswordHasher, PasswordHasher
+from pydentity.password_hasher import Argon2PasswordHasher, BcryptPasswordHasher
 from pydentity.types import UserProtokol
 
 
@@ -7,8 +7,8 @@ class MockUser(UserProtokol):
     pass
 
 
-def test_verify_hashed_password():
-    password_hasher = PasswordHasher()
+def test_verify_hashed_argon2():
+    password_hasher = Argon2PasswordHasher()
     hashed_password = password_hasher.hash_password(MockUser(), 'password')
     result = password_hasher.verify_hashed_password(MockUser(), hashed_password, 'password')
     assert result == PasswordVerificationResult.Success
@@ -16,8 +16,8 @@ def test_verify_hashed_password():
     assert result == PasswordVerificationResult.Failed
 
 
-def test_verify_hashed_old_password():
-    password_hasher = OldPasswordHasher()
+def test_verify_hashed_bcrypt():
+    password_hasher = BcryptPasswordHasher()
     hashed_password = password_hasher.hash_password(MockUser(), 'password')
     result = password_hasher.verify_hashed_password(MockUser(), hashed_password, 'password')
     assert result == PasswordVerificationResult.Success

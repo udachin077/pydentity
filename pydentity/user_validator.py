@@ -18,14 +18,14 @@ __all__ = ('UserValidator',)
 class UserValidator(IUserValidator[TUser], Generic[TUser]):
     """Provides validation builders for user classes."""
 
-    __slots__ = ('_describer',)
+    __slots__ = ('_errors',)
 
     def __init__(self, errors: IdentityErrorDescriber | None = None) -> None:
         """
 
         :param errors: The ``IdentityErrorDescriber`` used to provider error messages.
         """
-        self._describer = errors or IdentityErrorDescriber()
+        self._errors = errors or IdentityErrorDescriber()
 
     async def validate(self, manager: 'UserManager[TUser]', user: TUser) -> IdentityResult:
         if manager is None:
@@ -50,7 +50,7 @@ class UserValidator(IUserValidator[TUser], Generic[TUser]):
         username = await manager.get_username(user)
 
         if is_none_or_empty(username):
-            errors.append(self._describer.InvalidUserName('None'))
+            errors.append(self._errors.InvalidUserName('None'))
             return
 
         assert username is not None
@@ -60,36 +60,36 @@ class UserValidator(IUserValidator[TUser], Generic[TUser]):
                 not options.allowed_username_characters.isspace() and
                 any(c not in options.allowed_username_characters for c in username)
         ):
-            errors.append(self._describer.InvalidUserName(username))
+            errors.append(self._errors.InvalidUserName(username))
             return
 
         owner = await manager.find_by_name(username)
 
         if owner and (await manager.get_user_id(owner) != await manager.get_user_id(user)):
-            errors.append(self._describer.DuplicateUserName(username))
+            errors.append(self._errors.DuplicateUserName(username))
 
     async def _validate_email(self, manager: 'UserManager[TUser]', user: TUser, errors: list) -> None:
         email = await manager.get_email(user)
 
         if is_none_or_empty(email):
-            errors.append(self._describer.InvalidEmail('None'))
+            errors.append(self._errors.InvalidEmail('None'))
             return
 
         assert email is not None
         try:
             result = validate_email(email, check_deliverability=False)
         except EmailNotValidError:
-            errors.append(self._describer.InvalidEmail(email))
+            errors.append(self._errors.InvalidEmail(email))
             return
 
         options = manager.options.user
 
         if options.allowed_email_domains:
             if result.domain not in options.allowed_email_domains:
-                errors.append(self._describer.InvalidDomain(result.domain))
+                errors.append(self._errors.InvalidDomain(result.domain))
                 return
 
         owner = await manager.find_by_email(email)
 
         if owner and (await manager.get_user_id(owner) != await manager.get_user_id(user)):
-            errors.append(self._describer.DuplicateEmail(email))
+            errors.append(self._errors.DuplicateEmail(email))

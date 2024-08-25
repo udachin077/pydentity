@@ -32,14 +32,14 @@ def _is_letter_or_digit(c: str) -> bool:
 class PasswordValidator(IPasswordValidator[TUser], Generic[TUser]):
     """Provides the default password policy for Identity."""
 
-    __slots__ = ('_describer',)
+    __slots__ = ('_errors',)
 
     def __init__(self, errors: IdentityErrorDescriber | None = None) -> None:
         """
 
         :param errors: The ``IdentityErrorDescriber`` used to provider error messages.
         """
-        self._describer = errors or IdentityErrorDescriber()
+        self._errors = errors or IdentityErrorDescriber()
 
     async def validate(self, manager: 'UserManager[TUser]', password: str) -> IdentityResult:
         if manager is None:
@@ -51,22 +51,22 @@ class PasswordValidator(IPasswordValidator[TUser], Generic[TUser]):
         errors = []
 
         if is_none_or_empty(password) or len(password) < options.required_length:
-            errors.append(self._describer.PasswordTooShort(options.required_length))
+            errors.append(self._errors.PasswordTooShort(options.required_length))
 
         if options.required_digit and not any(_is_digit(c) for c in password):
-            errors.append(self._describer.PasswordRequiresDigit())
+            errors.append(self._errors.PasswordRequiresDigit())
 
         if options.required_lowercase and not any(_is_lower(c) for c in password):
-            errors.append(self._describer.PasswordRequiresLower())
+            errors.append(self._errors.PasswordRequiresLower())
 
         if options.required_uppercase and not any(_is_upper(c) for c in password):
-            errors.append(self._describer.PasswordRequiresUpper())
+            errors.append(self._errors.PasswordRequiresUpper())
 
         if options.required_non_alphanumeric and all(_is_letter_or_digit(c) for c in password):
-            errors.append(self._describer.PasswordRequiresNonAlphanumeric())
+            errors.append(self._errors.PasswordRequiresNonAlphanumeric())
 
         if options.required_unique_chars >= 1 and len(set(password)) < options.required_unique_chars:
-            errors.append(self._describer.PasswordRequiresUniqueChars(options.required_unique_chars))
+            errors.append(self._errors.PasswordRequiresUniqueChars(options.required_unique_chars))
 
         if not errors:
             return IdentityResult.success()
