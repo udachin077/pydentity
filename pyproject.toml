@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "pydentity"
-version = "0.1.1"
+version = "0.2.0"
 description = ""
 authors = ["Udachin Ivan <pypi.udachin@yandex.ru>"]
 license = "MIT"
@@ -24,7 +24,7 @@ pydentity-db-tortoise = { git = "https://github.com/udachin077/pydentity-db-tort
 pytest = "*"
 pytest-asyncio = "*"
 mypy = "1.11.0"
-types-passlib = "1.7.7.20240327"
+types-passlib = "1.7.*"
 
 [tool.poetry.extras]
 sqlalchemy = ["pydentity-db-sqlalchemy"]

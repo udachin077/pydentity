@@ -3,7 +3,7 @@ import logging
 import random
 import uuid
 from collections.abc import Iterable
-from typing import Final, Optional, Generic, cast, overload
+from typing import Final, Optional, Union, Generic, cast, overload, Any
 
 import pyotp
 
@@ -273,7 +273,7 @@ class UserManager(Generic[TUser]):
         """
         ...
 
-    async def get_username(self, user: ClaimsPrincipal | TUser) -> Optional[str]:
+    async def get_username(self, user: Union[ClaimsPrincipal, TUser]) -> Optional[str]:
         if user is None:
             raise ArgumentNoneException('user')
 
@@ -317,7 +317,7 @@ class UserManager(Generic[TUser]):
         """
         ...
 
-    async def get_user_id(self, user: ClaimsPrincipal | TUser) -> Optional[str]:
+    async def get_user_id(self, user: Union[ClaimsPrincipal, TUser]) -> Optional[str]:
         if user is None:
             raise ArgumentNoneException('user')
 
@@ -1550,8 +1550,8 @@ class UserManager(Generic[TUser]):
 
         return await self._get_recovery_code_store().count_codes(user)
 
-    def get_personal_data(self, user: TUser) -> dict[str, ...]:
-        personal_data: dict[str, ...] = dict()
+    def get_personal_data(self, user: TUser) -> dict[str, Any]:
+        personal_data: dict[str, Any] = dict()
         for prop in user.__personal_data__:  # type: ignore
             personal_data.update({prop: getattr(user, prop)})
         return personal_data

@@ -444,7 +444,7 @@ class IUserPasswordStore(IUserStore[TUser], Generic[TUser], ABC):
         """
 
     @abstractmethod
-    async def set_password_hash(self, user: TUser, password_hash: str | None) -> None:
+    async def set_password_hash(self, user: TUser, password_hash: Optional[str]) -> None:
         """
          Sets the password hash for the specified user.
 

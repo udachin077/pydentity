@@ -1,10 +1,9 @@
 import logging
 from collections.abc import Iterable
-from typing import Generic
+from typing import Generic, Optional
 
 from pydentity.abc import IUserClaimsPrincipalFactory, IUserConfirmation
 from pydentity.authentication.abc import IAuthenticationSchemeProvider
-from pydentity.user_confirmation import DefaultUserConfirmation
 from pydentity.exc import ArgumentNoneException
 from pydentity.http.context import HttpContext
 from pydentity.identity_constants import IdentityConstants
@@ -13,6 +12,7 @@ from pydentity.identity_options import IdentityOptions
 from pydentity.identity_result import IdentityResult
 from pydentity.security.claims import ClaimsPrincipal, Claim, ClaimTypes, ClaimsIdentity
 from pydentity.types import TUser
+from pydentity.user_confirmation import DefaultUserConfirmation
 from pydentity.user_manager import UserManager
 
 
@@ -109,8 +109,8 @@ class SignInManager(Generic[TUser]):
             schemes: IAuthenticationSchemeProvider,
             claims_factory: IUserClaimsPrincipalFactory[TUser],
             confirmation: IUserConfirmation[TUser],
-            options: IdentityOptions | None = None,
-            logger: logging.Logger | None = None
+            options: Optional[IdentityOptions] = None,
+            logger: Optional[logging.Logger] = None
     ):
         if not user_manager:
             raise ArgumentNoneException('user_manager')
@@ -124,7 +124,7 @@ class SignInManager(Generic[TUser]):
         self.authentication_scheme = IdentityConstants.ApplicationScheme
         self._confirmation = confirmation or DefaultUserConfirmation()
         self._schemes = schemes
-        self.__two_factor_info: TwoFactorAuthenticationInfo | None = None
+        self.__two_factor_info: Optional[TwoFactorAuthenticationInfo] = None
         self.__context = context
 
     @property
@@ -193,7 +193,7 @@ class SignInManager(Generic[TUser]):
 
         await self.sign_in_with_claims(user, auth.properties['is_persistent'], claims)
 
-    async def sign_in(self, user: TUser, is_persistent: bool, authentication_method: str | None = None):
+    async def sign_in(self, user: TUser, is_persistent: bool, authentication_method: Optional[str] = None):
         additional_claims = []
         if authentication_method:
             additional_claims.append(Claim(ClaimTypes.AuthenticationMethod, authentication_method))
@@ -237,7 +237,7 @@ class SignInManager(Generic[TUser]):
         if await self._schemes.get_scheme(IdentityConstants.TwoFactorUserIdScheme):
             await self.context.sign_out(IdentityConstants.TwoFactorUserIdScheme)
 
-    async def validate_security_stamp(self, principal: ClaimsPrincipal | None) -> TUser | None:
+    async def validate_security_stamp(self, principal: Optional[ClaimsPrincipal]) -> Optional[TUser]:
         """
         Validates the security stamp for the specified principal against the persisted stamp for the current user.
 
@@ -272,7 +272,7 @@ class SignInManager(Generic[TUser]):
                 )
         )
 
-    async def validate_two_factory_security_stamp(self, principal: ClaimsPrincipal | None) -> TUser | None:
+    async def validate_two_factory_security_stamp(self, principal: Optional[ClaimsPrincipal]) -> Optional[TUser]:
         """
         Validates the security stamp for the specified principal from one of
         the two-factor principals (remember client or user id) against
@@ -382,7 +382,7 @@ class SignInManager(Generic[TUser]):
 
         user_id = await self.user_manager.get_user_id(user)
         result = await self.context.authenticate(IdentityConstants.TwoFactorRememberMeScheme)
-        return result.principal and result.principal.find_first_value(ClaimTypes.Name) == user_id
+        return bool(result.principal and result.principal.find_first_value(ClaimTypes.Name) == user_id)
 
     async def remember_two_factor_client(self, user: TUser):
         await self.context.sign_in(
@@ -523,7 +523,7 @@ class SignInManager(Generic[TUser]):
         info = await self.retrieve_two_factor_info()
         return info.user if info else None
 
-    def _store_two_factor_info(self, user_id: str, login_provider: str | None) -> ClaimsPrincipal:
+    def _store_two_factor_info(self, user_id: str, login_provider: Optional[str]) -> ClaimsPrincipal:
         identity = ClaimsIdentity(authentication_type=IdentityConstants.TwoFactorUserIdScheme)
         identity.add_claims(Claim(ClaimTypes.Name, user_id))
         if login_provider:
@@ -550,7 +550,7 @@ class SignInManager(Generic[TUser]):
             self,
             user: TUser,
             is_persistent: bool,
-            login_provider: str | None = None,
+            login_provider: Optional[str] = None,
             bypass_two_factor: bool = False
     ):
         if not bypass_two_factor and await self._is_two_factor_enabled(user):
@@ -581,7 +581,7 @@ class SignInManager(Generic[TUser]):
 
         return SignInResult.success()
 
-    async def retrieve_two_factor_info(self) -> TwoFactorAuthenticationInfo | None:
+    async def retrieve_two_factor_info(self) -> Optional[TwoFactorAuthenticationInfo]:
         if self.__two_factor_info:
             return self.__two_factor_info
 
@@ -618,7 +618,7 @@ class SignInManager(Generic[TUser]):
         self.logger.warning("User is currently locked out.")
         return SignInResult.locked_out()
 
-    async def _pre_sign_in_check(self, user: TUser) -> SignInResult | None:
+    async def _pre_sign_in_check(self, user: TUser) -> Optional[SignInResult]:
         """
         Used to ensure that a user is allowed to sign in.
 

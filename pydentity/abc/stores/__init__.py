@@ -2,7 +2,6 @@ from pydentity.abc.stores.user_store import (
     IUserStore,
     IUserAuthenticationTokenStore,
     IUserAuthenticatorKeyStore,
-    IUserAuthenticationTokenStore,
     IUserClaimStore,
     IUserEmailStore,
     IUserLockoutStore,

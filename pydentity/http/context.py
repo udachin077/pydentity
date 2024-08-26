@@ -1,6 +1,7 @@
 from abc import abstractmethod
 
-from pydentity.authentication import IAuthenticationSchemeProvider, AuthenticationResult, IAuthenticationHandler
+from pydentity.authentication import AuthenticationResult
+from pydentity.authentication.abc import IAuthenticationHandler, IAuthenticationSchemeProvider
 from pydentity.exc import InvalidOperationException
 from pydentity.security.claims import ClaimsPrincipal
 
@@ -28,11 +29,19 @@ class HttpContext[TRequest, TResponse]:
 
     @property
     def user(self) -> ClaimsPrincipal | None:
-        return self.request.user
+        return self._getuser()
 
     @user.setter
     def user(self, value: ClaimsPrincipal | None) -> None:
-        self.request.scope['user'] = value  # for FastAPI
+        self._setuser(value)
+
+    @abstractmethod
+    def _getuser(self) -> ClaimsPrincipal | None:
+        pass
+
+    @abstractmethod
+    def _setuser(self, value: ClaimsPrincipal | None) -> None:
+        pass
 
     async def authenticate(self, scheme: str) -> AuthenticationResult:
         return await (await self.get_authentication_service(scheme)).authenticate(self, scheme)

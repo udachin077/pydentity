@@ -24,52 +24,46 @@ def claims():
     ]
 
 
-@pytest.mark.parametrize("claim_type, result", {
+@pytest.mark.parametrize("_match, result", {
     (ClaimTypes.Name, True,),
     (lambda x: x.type == ClaimTypes.Name, True,),
     (ClaimTypes.SecurityStamp, False,),
     (lambda x: x.type == ClaimTypes.SecurityStamp, False,),
 })
-def test_identity_find_all(claim_type, result, identity):
-    assert (len([c for c in identity.find_all(claim_type)]) > 0) is result
+def test_identity_find_all(_match, result, identity):
+    assert (len([c for c in identity.find_all(_match)]) > 0) is result
 
 
-@pytest.mark.parametrize("claim_type, result", {
+@pytest.mark.parametrize("_match, result", {
     (ClaimTypes.Name, True,),
     (lambda x: x.type == ClaimTypes.Name, True,),
     (ClaimTypes.SecurityStamp, False,),
     (lambda x: x.type == ClaimTypes.SecurityStamp, False,),
 })
-def test_identity_find_first(claim_type, result, identity):
-    assert bool(identity.find_first(claim_type)) is result
+def test_identity_find_first(_match, result, identity):
+    assert bool(identity.find_first(_match)) is result
 
 
-@pytest.mark.parametrize("claim_type, result", {
+@pytest.mark.parametrize("_match, result", {
     (ClaimTypes.Name, True,),
     (lambda x: x.type == ClaimTypes.Name, True,),
     (ClaimTypes.SecurityStamp, False,),
     (lambda x: x.type == ClaimTypes.SecurityStamp, False,),
 })
-def test_identity_find_first_value(claim_type, result, identity):
-    assert bool(identity.find_first_value(claim_type)) is result
+def test_identity_find_first_value(_match, result, identity):
+    assert bool(identity.find_first_value(_match)) is result
 
 
-@pytest.mark.parametrize("claim_type, claim_value, result", {
-    (ClaimTypes.Name, User.username, True,),
-    (ClaimTypes.Name, "Undefined", False,),
-    (ClaimTypes.SecurityStamp, "SecurityStamp", False,)
+@pytest.mark.parametrize("_match, result", {
+    ((ClaimTypes.Name, User.username,), True,),
+    ((ClaimTypes.Name, "Undefined",), False,),
+    ((ClaimTypes.SecurityStamp, "SecurityStamp",), False,),
+    ((lambda x: x.type == ClaimTypes.Name and x.value == User.username,), True,),
+    ((lambda x: x.type == ClaimTypes.Name and x.value == "User.username",), False,),
+    ((lambda x: x.type == ClaimTypes.SecurityStamp and x.value == "SecurityStamp",), False,),
 })
-def test_identity_has_claim(claim_type, claim_value, result, identity):
-    assert identity.has_claim(claim_type, claim_value) is result
-
-
-@pytest.mark.parametrize("predicate, result", {
-    (lambda x: x.type == ClaimTypes.Name and x.value == User.username, True,),
-    (lambda x: x.type == ClaimTypes.Name and x.value == "User.username", False,),
-    (lambda x: x.type == ClaimTypes.SecurityStamp and x.value == "SecurityStamp", False,),
-})
-def test_identity_has_claim_with_predicate(predicate, result, identity):
-    assert identity.has_claim(predicate) is result
+def test_identity_has_claim(_match, result, identity):
+    assert identity.has_claim(*_match) is result  # noqa
 
 
 @pytest.mark.parametrize("claim_type, result", {
@@ -102,23 +96,17 @@ def test_principal_find_first_value(claim_type, result, principal):
     assert bool(principal.find_first_value(claim_type)) is result
 
 
-@pytest.mark.parametrize("claim_type, claim_value, result", {
-    (ClaimTypes.Name, User.username, True,),
-    (ClaimTypes.Name, "Undefined", False,),
-    (ClaimTypes.SecurityStamp, "SecurityStamp", False,)
+@pytest.mark.parametrize("_match, result", {
+    ((ClaimTypes.Name, User.username,), True,),
+    ((ClaimTypes.Name, "Undefined",), False,),
+    ((ClaimTypes.SecurityStamp, "SecurityStamp",), False,),
+    ((lambda x: x.type == ClaimTypes.Name and x.value == User.username,), True,),
+    ((lambda x: x.type == ClaimTypes.Email and x.value == User.email,), True,),
+    ((lambda x: x.type == ClaimTypes.Email and x.value == "User.email",), False,),
+    ((lambda x: x.type == ClaimTypes.SecurityStamp and x.value == User.username,), False,),
 })
-def test_principal_has_claim(claim_type, claim_value, result, principal):
-    assert principal.has_claim(claim_type, claim_value) is result
-
-
-@pytest.mark.parametrize("predicate, result", {
-    (lambda x: x.type == ClaimTypes.Name and x.value == User.username, True,),
-    (lambda x: x.type == ClaimTypes.Email and x.value == User.email, True,),
-    (lambda x: x.type == ClaimTypes.Email and x.value == "User.email", False,),
-    (lambda x: x.type == ClaimTypes.SecurityStamp and x.value == User.username, False,),
-})
-def test_principal_has_claim_with_predicate(predicate, result, principal):
-    assert principal.has_claim(predicate) is result
+def test_principal_has_claim(_match, result, principal):
+    assert principal.has_claim(*_match) is result  # noqa
 
 
 @pytest.mark.parametrize("role_name, result", {
@@ -132,7 +120,7 @@ def test_principal_is_in_role(role_name, result, principal):
 
 
 @pytest.mark.parametrize("role_name, result", {
-    (("admin", "user"), True,),
+    (("admin", "user",), True,),
     (("manager", "user",), False,),
     (("admin", "superuser",), False,)
 })
@@ -141,7 +129,7 @@ def test_principal_is_in_all_roles(role_name, result, principal):
 
 
 @pytest.mark.parametrize("role_name, result", {
-    (("admin", "user"), True,),
+    (("admin", "user",), True,),
     (("superuser", "user",), True,),
     (("admin", "Manager",), True,),
     (("Admin", "Manager",), False,)
