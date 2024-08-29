@@ -111,15 +111,18 @@ class PhoneNumberTokenProvider(TotpSecurityStampBasedTokenProvider[TUser], Gener
 
 
 class AuthenticatorTokenProvider(IUserTwoFactorTokenProvider[TUser], Generic[TUser]):
+    @override
     async def generate(self, manager: 'UserManager[TUser]', purpose: str, user: TUser) -> str:
         return ''
 
+    @override
     async def validate(self, manager: 'UserManager[TUser]', purpose: str, token: str, user: TUser) -> bool:
         key = await manager.get_authenticator_key(user)
         if is_none_or_empty(key):
             return False
         return Rfc6238AuthenticationService.validate_code(key.encode(), token)
 
+    @override
     async def can_generate_two_factor(self, manager: 'UserManager[TUser]', user: TUser) -> bool:
         key = await manager.get_authenticator_key(user)
         return not is_none_or_empty(key)
@@ -137,12 +140,7 @@ class DataProtectorTokenProvider(IUserTwoFactorTokenProvider[TUser], Generic[TUs
         if manager.supports_user_security_stamp:
             stamp = await manager.get_security_stamp(user)
 
-        data = {
-            'user_id': user_id,
-            'purpose': purpose or '',
-            'stamp': stamp or ''
-        }
-
+        data = {'user_id': user_id, 'purpose': purpose or '', 'stamp': stamp or ''}
         return self._serializer.dumps(data)
 
     async def can_generate_two_factor(self, manager: 'UserManager[TUser]', user: TUser) -> bool:
@@ -173,7 +171,7 @@ class DataProtectorTokenProvider(IUserTwoFactorTokenProvider[TUser], Generic[TUs
                         self.logger.error('Security stamp not equals')
                     return is_equals_security_stamp
 
-                stamp_is_empty = data['stamp'] == ''
+                stamp_is_empty = bool(data['stamp'])
                 if not stamp_is_empty:
                     self.logger.error('Security stamp is not empty')
                 return stamp_is_empty

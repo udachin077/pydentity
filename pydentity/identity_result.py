@@ -1,3 +1,5 @@
+from collections.abc import Iterable
+
 from pydentity.identity_error import IdentityError
 
 __all__ = ('IdentityResult',)
@@ -9,7 +11,7 @@ class IdentityResult:
     __slots__ = ('_errors', '_succeeded',)
 
     def __init__(self, succeeded: bool, *errors: IdentityError) -> None:
-        self._errors: tuple[IdentityError, ...] = errors or ()
+        self._errors = errors or ()
         self._succeeded = succeeded
 
     @property
@@ -18,23 +20,26 @@ class IdentityResult:
         return self._succeeded
 
     @property
-    def errors(self) -> tuple[IdentityError, ...]:
-        """An :exc:`Iterable` of :exc:`IdentityError` instances containing errors that occurred during
+    def errors(self) -> Iterable[IdentityError]:
+        """An ``Iterable`` of ``IdentityError`` instances containing errors that occurred during
         the identity operation."""
         return self._errors
 
     @staticmethod
     def failed(*errors: IdentityError) -> 'IdentityResult':
-        """Creates an :exc:`IdentityResult` indicating a failed identity operation,
+        """Creates an ``IdentityResult`` indicating a failed identity operation,
         with a list of errors if applicable."""
         return IdentityResult(False, *errors)
 
     @staticmethod
     def success() -> 'IdentityResult':
-        """Returns an :exc:`IdentityResult` indicating a successful identity operation."""
+        """Returns an ``IdentityResult`` indicating a successful identity operation."""
         return IdentityResult(True)
 
     def __str__(self) -> str:
         if self.succeeded:
             return 'Succeeded.'
         return f'Failed: {",".join(e.code for e in self.errors)}.'
+
+    def __repr__(self):
+        return f'<{self.__class__.__name__}: {"Succeeded" if self.succeeded else "Failed"}>'

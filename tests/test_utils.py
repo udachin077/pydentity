@@ -1,9 +1,8 @@
-from dataclasses import dataclass
 from datetime import timedelta, UTC
 
 import pytest
 
-from pydentity.utils import datetime, is_none_or_empty, asdict
+from pydentity.utils import datetime, is_none_or_empty
 
 
 def test_datetime_utcnow():
@@ -79,16 +78,3 @@ def test_is_none_or_empty():
     assert is_none_or_empty("") is True
     assert is_none_or_empty(" ") is True
     assert is_none_or_empty("None") is False
-
-
-@dataclass
-class AnyDataClass:
-    require_sub: str = "False"
-    require_jti: bool = False
-    require_at_hash: str | None = None
-    leeway: int = 30
-
-
-def test_asdict():
-    assert asdict(AnyDataClass()).get("require_at_hash", 1000) == 1000
-    assert asdict(AnyDataClass(), exclude_none=False)["require_at_hash"] is None

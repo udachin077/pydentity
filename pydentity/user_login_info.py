@@ -17,3 +17,6 @@ class UserLoginInfo:
     @property
     def display_name(self) -> str | None:
         return self._display_name
+
+    def __repr__(self):
+        return f'<{self.__class__.__name__}: {self.login_provider}:{self.provider_key}>'

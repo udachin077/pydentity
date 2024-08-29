@@ -1,7 +1,5 @@
 import base64
-import dataclasses
 from datetime import datetime as _datetime, timedelta, UTC
-from typing import Any
 from uuid import NAMESPACE_DNS, UUID, uuid5, getnode
 
 import pyotp
@@ -9,7 +7,6 @@ import pyotp
 from pydentity.exc import ArgumentNoneException
 
 __all__ = (
-    'asdict',
     'datetime',
     'generate_totp_qrcode_uri',
     'get_device_uuid',
@@ -48,17 +45,11 @@ class datetime(_datetime):
 
 
 def is_none_or_empty(_string: str | None, /) -> bool:
-    return _string is None or not _string or _string.isspace()
+    return bool(not _string or _string.isspace())
 
 
 def get_device_uuid() -> str:
     return str(uuid5(NAMESPACE_DNS, str(UUID(int=getnode()))))
-
-
-def asdict(obj: Any, exclude_none: bool = True) -> dict[str, Any]:
-    if exclude_none:
-        return dataclasses.asdict(obj, dict_factory=lambda x: {k: v for (k, v) in x if v is not None})
-    return dataclasses.asdict(obj)
 
 
 def generate_totp_qrcode_uri(secret: str, name: str, app_name: str, modifier: str | None = None) -> str:

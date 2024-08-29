@@ -14,4 +14,7 @@ class IdentityError:
         return self._description
 
     def __str__(self) -> str:
-        return f"{self.code}: {self.description}"
+        return self.description
+
+    def __repr__(self):
+        return f"<{self.__class__.__name__}: {self.code}>"
