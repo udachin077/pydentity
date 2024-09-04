@@ -7,12 +7,12 @@ from pydentity.exc import ArgumentNoneException, InvalidOperationException
 from pydentity.security.claims import ClaimsPrincipal
 
 __all__ = (
-    'AuthenticationError',
-    'AuthenticationOptions',
-    'AuthenticationScheme',
-    'AuthenticationSchemeBuilder',
-    'AuthenticationResult',
-    'AuthenticationSchemeProvider',
+    "AuthenticationError",
+    "AuthenticationOptions",
+    "AuthenticationScheme",
+    "AuthenticationSchemeBuilder",
+    "AuthenticationResult",
+    "AuthenticationSchemeProvider",
 )
 
 
@@ -21,7 +21,7 @@ class AuthenticationError(Exception):
 
 
 class AuthenticationResult:
-    __slots__ = ('_principal', '_properties',)
+    __slots__ = ("_principal", "_properties",)
 
     def __init__(self, principal: ClaimsPrincipal, properties: dict) -> None:
         self._principal = principal
@@ -37,20 +37,20 @@ class AuthenticationResult:
 
 
 class AuthenticationScheme:
-    __slots__ = ('name', 'handler',)
+    __slots__ = ("name", "handler",)
 
     def __init__(self, name: str, handler: IAuthenticationHandler) -> None:
         if not name:
-            raise ArgumentNoneException('name')
+            raise ArgumentNoneException("name")
         if not handler:
-            raise ArgumentNoneException('handler')
+            raise ArgumentNoneException("handler")
 
         self.name = name
         self.handler = handler
 
 
 class AuthenticationSchemeBuilder:
-    __slots__ = ('name', 'handler',)
+    __slots__ = ("name", "handler",)
 
     def __init__(self, name: str, handler: IAuthenticationHandler = None) -> None:
         self.name = name
@@ -58,26 +58,26 @@ class AuthenticationSchemeBuilder:
 
     def build(self) -> AuthenticationScheme:
         if not self.handler:
-            raise InvalidOperationException('handler must be configured to build an AuthenticationScheme.')
+            raise InvalidOperationException("'handler' must be configured to build an AuthenticationScheme.")
         return AuthenticationScheme(self.name, self.handler)
 
 
 class AuthenticationOptions:
     __slots__ = (
-        '_scheme_map',
-        'default_scheme',
-        'default_authentication_scheme',
-        'default_sign_in_scheme',
-        'default_sign_out_scheme',
-        'required_authenticated_signin',
+        "_scheme_map",
+        "default_scheme",
+        "default_authentication_scheme",
+        "default_sign_in_scheme",
+        "default_sign_out_scheme",
+        "required_authenticated_signin",
     )
 
     def __init__(self) -> None:
         self._scheme_map = {}
-        self.default_scheme: str = ''
-        self.default_authentication_scheme: str = ''
-        self.default_sign_in_scheme: str = ''
-        self.default_sign_out_scheme: str = ''
+        self.default_scheme: str = ""
+        self.default_authentication_scheme: str = ""
+        self.default_sign_in_scheme: str = ""
+        self.default_sign_out_scheme: str = ""
         self.required_authenticated_signin: bool = True
 
     @overload
@@ -94,11 +94,11 @@ class AuthenticationOptions:
             scheme_or_builder: AuthenticationScheme | Callable[[AuthenticationSchemeBuilder], None]
     ) -> None:
         if not name:
-            raise ArgumentNoneException('name')
+            raise ArgumentNoneException("name")
         if not scheme_or_builder:
-            raise ArgumentNoneException('scheme_or_builder')
+            raise ArgumentNoneException("scheme_or_builder")
         if name in self._scheme_map:
-            raise InvalidOperationException(f'Scheme already exists: {name}.')
+            raise InvalidOperationException(f"Scheme already exists: {name}.")
 
         if isinstance(scheme_or_builder, AuthenticationScheme):
             self._scheme_map[name] = scheme_or_builder
@@ -113,18 +113,18 @@ class AuthenticationOptions:
 
 
 class AuthenticationSchemeProvider(IAuthenticationSchemeProvider):
-    options: AuthenticationOptions = {}
+    options: AuthenticationOptions
 
     def __init__(self) -> None:
         self._auto_default_scheme = None
-        for scheme in getattr(self.options, '_scheme_map').values():
+        for scheme in getattr(self.options, "_scheme_map").values():
             self._auto_default_scheme = scheme
             break
 
     async def get_scheme(self, name: str) -> Optional[AuthenticationScheme]:
         if not name:
-            raise ArgumentNoneException('name')
-        return getattr(self.options, '_scheme_map').get(name, None)
+            raise ArgumentNoneException("name")
+        return getattr(self.options, "_scheme_map").get(name, None)
 
     async def get_default_authentication_scheme(self) -> Optional[AuthenticationScheme]:
         if name := self.options.default_authentication_scheme:

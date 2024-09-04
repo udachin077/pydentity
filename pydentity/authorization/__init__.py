@@ -4,6 +4,5 @@ from pydentity.authorization._base import (
     AuthorizationPolicy as AuthorizationPolicy,
     AuthorizationPolicyBuilder as AuthorizationPolicyBuilder,
     AuthorizationPolicyProvider as AuthorizationPolicyProvider,
-    AuthorizationHandlerContext as AuthorizationHandlerContext,
-    AuthorizationHandler as AuthorizationHandler,
+    AuthorizationHandlerContext as AuthorizationHandlerContext
 )

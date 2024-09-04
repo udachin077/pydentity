@@ -4,10 +4,11 @@ from pydentity.authentication import AuthenticationResult
 from pydentity.authentication.abc import IAuthenticationHandler, IAuthenticationSchemeProvider
 from pydentity.exc import InvalidOperationException
 from pydentity.security.claims import ClaimsPrincipal
+from pydentity.types import TRequest, TResponse
 
 
-class HttpContext[TRequest, TResponse]:
-    __slots__ = ('_request', '_response', '_schemes',)
+class HttpContext:
+    __slots__ = ("_request", "_response", "_schemes",)
 
     def __init__(
             self,
@@ -55,4 +56,4 @@ class HttpContext[TRequest, TResponse]:
     async def get_authentication_service(self, name: str) -> IAuthenticationHandler:
         if scheme := await self._schemes.get_scheme(name):
             return scheme.handler
-        raise InvalidOperationException(f'Scheme {name} not registered.')
+        raise InvalidOperationException(f"Scheme {name} not registered.")
