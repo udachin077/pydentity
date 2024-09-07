@@ -15,6 +15,7 @@ exclude = [
 python = "^3.12"
 email-validator = "2.2.0"
 itsdangerous = "2.2.0"
+cryptography = "43.0.0"
 pyotp = "2.9.0"
 pwdlib = { version = "0.2.0", extras = ["argon2", "bcrypt"] }
 pydentity-db-sqlalchemy = { git = "https://github.com/udachin077/pydentity-db-sqlalchemy.git", optional = true }

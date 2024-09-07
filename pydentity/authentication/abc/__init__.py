@@ -42,3 +42,13 @@ class IAuthenticationSchemeProvider(ABC):
     @abstractmethod
     async def get_default_scheme(self) -> Optional["AuthenticationScheme"]:
         pass
+
+
+class IAuthenticationDataProtector(ABC):
+    @abstractmethod
+    def unprotect(self, data: str | None) -> dict | None:
+        pass
+
+    @abstractmethod
+    def protect(self, data: dict | None) -> str | None:
+        pass

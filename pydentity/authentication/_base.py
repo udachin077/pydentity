@@ -1,18 +1,30 @@
+import base64
+import json
+import platform
 from collections.abc import Callable
 from inspect import isfunction
-from typing import overload, Optional
+from typing import overload, Optional, Any
 
-from pydentity.authentication.abc import IAuthenticationHandler, IAuthenticationSchemeProvider
+from cryptography.fernet import Fernet
+from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
+
+from pydentity.authentication.abc import (
+    IAuthenticationHandler,
+    IAuthenticationSchemeProvider,
+    IAuthenticationDataProtector
+)
 from pydentity.exc import ArgumentNoneException, InvalidOperationException
 from pydentity.security.claims import ClaimsPrincipal
 
 __all__ = (
     "AuthenticationError",
     "AuthenticationOptions",
+    "AuthenticationResult",
     "AuthenticationScheme",
     "AuthenticationSchemeBuilder",
-    "AuthenticationResult",
     "AuthenticationSchemeProvider",
+    "DefaultAuthenticationDataProtector",
 )
 
 
@@ -23,7 +35,7 @@ class AuthenticationError(Exception):
 class AuthenticationResult:
     __slots__ = ("_principal", "_properties",)
 
-    def __init__(self, principal: ClaimsPrincipal, properties: dict) -> None:
+    def __init__(self, principal: ClaimsPrincipal, properties: dict[str, Any]) -> None:
         self._principal = principal
         self._properties = properties
 
@@ -32,8 +44,11 @@ class AuthenticationResult:
         return self._principal
 
     @property
-    def properties(self) -> dict:
+    def properties(self) -> dict[str, Any]:
         return self._properties
+
+    def __bool__(self) -> bool:
+        return bool(self._principal.identity and self._principal.identity.is_authenticated)
 
 
 class AuthenticationScheme:
@@ -52,7 +67,7 @@ class AuthenticationScheme:
 class AuthenticationSchemeBuilder:
     __slots__ = ("name", "handler",)
 
-    def __init__(self, name: str, handler: IAuthenticationHandler = None) -> None:
+    def __init__(self, name: str, handler: IAuthenticationHandler | None = None) -> None:
         self.name = name
         self.handler = handler
 
@@ -97,6 +112,7 @@ class AuthenticationOptions:
             raise ArgumentNoneException("name")
         if not scheme_or_builder:
             raise ArgumentNoneException("scheme_or_builder")
+
         if name in self._scheme_map:
             raise InvalidOperationException(f"Scheme already exists: {name}.")
 
@@ -145,3 +161,31 @@ class AuthenticationSchemeProvider(IAuthenticationSchemeProvider):
         if name := self.options.default_scheme:
             return await self.get_scheme(name)
         return self._auto_default_scheme
+
+
+class DefaultAuthenticationDataProtector(IAuthenticationDataProtector):
+    __slots__ = ("__fernet",)
+
+    def __init__(self, key: bytes | str = None, salt: bytes | str = None):
+        key = key or platform.node()
+        salt = salt or self.__class__.__name__
+
+        if isinstance(key, str):
+            key = key.encode()
+
+        if isinstance(salt, str):
+            salt = salt.encode()
+
+        kdf = PBKDF2HMAC(hashes.SHA256(), 32, salt, 480000)
+        key = base64.urlsafe_b64encode(kdf.derive(key))
+        self.__fernet = Fernet(key)
+
+    def protect(self, data: dict | None) -> str | None:
+        if data:
+            return str(self.__fernet.encrypt(json.dumps(data, separators=(",", ":")).encode()))
+        return data
+
+    def unprotect(self, data: str | None) -> dict | None:
+        if data:
+            return json.loads(self.__fernet.decrypt(data))
+        return data
