@@ -1,32 +1,29 @@
-import json
 import sys
-from abc import ABC, abstractmethod
-from dataclasses import dataclass
 from datetime import timedelta
 from functools import lru_cache
 from typing import Literal
 
-from pydentity.authentication import AuthenticationResult
-from pydentity.authentication.abc import IAuthenticationHandler
+from pydentity.authentication._base import AuthenticationResult, DefaultAuthenticationDataProtector
+from pydentity.authentication.abc import IAuthenticationHandler, IAuthenticationDataProtector
 from pydentity.http.context import HttpContext
 from pydentity.security.claims import ClaimsPrincipal
 from pydentity.security.claims.serializer import ClaimsPrincipalSerializer
 from pydentity.utils import datetime
 
-
-class ICookieAuthenticationSerializer(ABC):
-    @abstractmethod
-    def deserialize(self, data: str | None) -> dict | None:
-        pass
-
-    @abstractmethod
-    def serialize(self, data: dict | None) -> str | None:
-        pass
+__all__ = (
+    "CookieAuthenticationHandler",
+    "CookieAuthenticationOptions",
+    "DefaultCookieAuthenticationProtector",
+)
 
 
 @lru_cache
 def _get_cookie_name(scheme: str, name: str | None = None) -> str:
-    return f"FastAPI.{name or scheme}"
+    return f"{name or scheme}"
+
+
+class DefaultCookieAuthenticationProtector(DefaultAuthenticationDataProtector):
+    pass
 
 
 class CookieAuthenticationOptions:
@@ -65,9 +62,9 @@ class CookieAuthenticationOptions:
 class CookieAuthenticationHandler(IAuthenticationHandler):
     __slots__ = ("options",)
 
-    serializer: ICookieAuthenticationSerializer = None
+    protector: IAuthenticationDataProtector | None = None
 
-    def __init__(self, options: CookieAuthenticationOptions | None = None):
+    def __init__(self, options: CookieAuthenticationOptions | None = None, ):
         self.options = options or CookieAuthenticationOptions()
 
     async def authenticate(self, context: HttpContext, scheme: str) -> AuthenticationResult:
@@ -106,10 +103,10 @@ class CookieAuthenticationHandler(IAuthenticationHandler):
             principal: ClaimsPrincipal,
             **properties
     ) -> dict[str, str]:
-        encoded_principal = ClaimsPrincipalSerializer.serialize(principal)
-        encoded_principal.update({".properties": properties})
+        enc_principal = ClaimsPrincipalSerializer.serialize(principal)
+        enc_principal.update({".properties": properties})
+        enc_data = self.protector.protect(enc_principal)
         cookie_name = _get_cookie_name(scheme, self.options.name)
-        enc_data = self.serializer.serialize(encoded_principal) if self.serializer else json.dumps(encoded_principal)
 
         if sys.getsizeof(enc_data) < 4090:
             return {cookie_name: enc_data}
@@ -132,7 +129,7 @@ class CookieAuthenticationHandler(IAuthenticationHandler):
                 chunks_count = int(cookie_value.removeprefix("chunks-"))
                 cookie_value = "".join(cookies[f"{cookie_name}C{i + 1}"] for i in range(chunks_count))
 
-            dec_data = self.serializer.deserialize(cookie_value) if self.serializer else json.loads(cookie_value)
+            dec_data = self.protector.unprotect(cookie_value)
             properties = dec_data.pop(".properties")
             principal = ClaimsPrincipalSerializer.deserialize(dec_data)
             return AuthenticationResult(principal, properties)

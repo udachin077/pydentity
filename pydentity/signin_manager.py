@@ -1,16 +1,16 @@
-import logging
 from collections.abc import Iterable
 from typing import Generic, Optional
 
-from pydentity.abc import IUserClaimsPrincipalFactory, IUserConfirmation
+from pydentity.abc import IUserClaimsPrincipalFactory, IUserConfirmation, ILogger
 from pydentity.authentication.abc import IAuthenticationSchemeProvider
 from pydentity.exc import ArgumentNoneException
-from pydentity.http.context import HttpContext
+from pydentity.http.context import HttpContext, IHttpContextAccessor
 from pydentity.identity_constants import IdentityConstants
 from pydentity.identity_error import IdentityError
 from pydentity.identity_options import IdentityOptions
 from pydentity.identity_result import IdentityResult
-from pydentity.security.claims import ClaimsPrincipal, Claim, ClaimTypes, ClaimsIdentity
+from pydentity.loggers import sign_in_manager_logger
+from pydentity.security.claims import ClaimsPrincipal, ClaimsIdentity, Claim, ClaimTypes
 from pydentity.types import TUser
 from pydentity.user_confirmation import DefaultUserConfirmation
 from pydentity.user_manager import UserManager
@@ -91,45 +91,45 @@ class SignInManager(Generic[TUser]):
     """Provides the APIs for user sign in."""
 
     __slots__ = (
-        'user_manager',
-        'options',
+        '__two_factor_info',
+        '_confirmation',
+        '_context_accessor',
+        '_schemes',
+        'authentication_scheme',
         'claims_factory',
         'logger',
-        'authentication_scheme',
-        '_confirmation',
-        '_schemes',
-        '__two_factor_info',
-        '__context',
+        'options',
+        'user_manager',
     )
 
     def __init__(
             self,
             user_manager: UserManager[TUser],
-            context: HttpContext,
+            context_accessor: IHttpContextAccessor,
             schemes: IAuthenticationSchemeProvider,
             claims_factory: IUserClaimsPrincipalFactory[TUser],
             confirmation: IUserConfirmation[TUser],
             options: Optional[IdentityOptions] = None,
-            logger: Optional[logging.Logger] = None
+            logger: Optional[ILogger["SignInManager"]] = None
     ):
         if not user_manager:
             raise ArgumentNoneException('user_manager')
         if not claims_factory:
             raise ArgumentNoneException('claims_factory')
 
-        self.user_manager: UserManager = user_manager
-        self.options: IdentityOptions = options or IdentityOptions()
-        self.claims_factory: IUserClaimsPrincipalFactory[TUser] = claims_factory
-        self.logger: logging.Logger = logger or logging.Logger(self.__class__.__name__)
-        self.authentication_scheme = IdentityConstants.ApplicationScheme
+        self.user_manager = user_manager
+        self.claims_factory = claims_factory
         self._confirmation = confirmation or DefaultUserConfirmation()
+        self.options = options or IdentityOptions()
+        self.logger = logger or sign_in_manager_logger
+        self.authentication_scheme = IdentityConstants.ApplicationScheme
+        self._context_accessor = context_accessor
         self._schemes = schemes
         self.__two_factor_info: Optional[TwoFactorAuthenticationInfo] = None
-        self.__context = context
 
     @property
     def context(self) -> HttpContext:
-        return self.__context
+        return self._context_accessor.http_context
 
     async def is_signed_in(self, principal: ClaimsPrincipal) -> bool:
         """

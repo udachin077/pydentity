@@ -5,13 +5,14 @@ from typing import Optional, Literal, Any, overload
 from pydentity.authorization.abc import IAuthorizationPolicyProvider, IAuthorizationHandler
 from pydentity.exc import ArgumentNoneException, InvalidOperationException
 from pydentity.security.claims import ClaimsPrincipal
+from pydentity.types import TRequest
 
 __all__ = (
     "AuthorizationError",
+    "AuthorizationHandlerContext",
     "AuthorizationOptions",
     "AuthorizationPolicy",
     "AuthorizationPolicyBuilder",
-    "AuthorizationHandlerContext",
     "AuthorizationPolicyProvider",
 )
 
@@ -20,7 +21,7 @@ class AuthorizationError(Exception):
     pass
 
 
-class AuthorizationHandlerContext[TRequest]:
+class AuthorizationHandlerContext:
     __slots__ = (
         "_request",
         "_fail_called",

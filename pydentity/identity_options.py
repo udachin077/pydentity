@@ -8,13 +8,13 @@ from pydentity.security.claims import ClaimTypes
 from pydentity.types import TUser
 
 __all__ = (
-    'LockoutOptions',
     'ClaimsIdentityOptions',
+    'IdentityOptions',
+    'LockoutOptions',
     'PasswordOptions',
     'SignInOptions',
     'TokenOptions',
     'UserOptions',
-    'IdentityOptions'
 )
 
 
@@ -41,11 +41,11 @@ class ClaimsIdentityOptions:
     """Options used to configure the claim types used for well known claims."""
 
     __slots__ = (
-        'role_claim_type',
-        'username_claim_type',
-        'user_id_claim_type',
         'email_claim_type',
+        'role_claim_type',
         'security_stamp_claim_type',
+        'user_id_claim_type',
+        'username_claim_type',
     )
 
     def __init__(self) -> None:
@@ -72,9 +72,9 @@ class PasswordOptions:
     __slots__ = (
         'required_digit',
         'required_length',
-        'required_unique_chars',
         'required_lowercase',
         'required_non_alphanumeric',
+        'required_unique_chars',
         'required_uppercase',
     )
 
@@ -103,9 +103,9 @@ class SignInOptions:
     """Options for configuring sign-in."""
 
     __slots__ = (
+        'required_confirmed_account',
         'required_confirmed_email',
         'required_confirmed_phone_number',
-        'required_confirmed_account',
     )
 
     def __init__(self) -> None:
@@ -124,14 +124,14 @@ class TokenOptions:
     """Options for user tokens."""
 
     __slots__ = (
+        'authenticator_token_provider',
         'change_email_token_provider',
         'change_phone_number_token_provider',
         'email_confirmation_token_provider',
-        'phone_number_confirmation_token_provider',
         'password_reset_token_provider',
-        'authenticator_token_provider',
-        'totp_interval',
+        'phone_number_confirmation_token_provider',
         'provider_map',
+        'totp_interval',
     )
 
     DEFAULT_PROVIDER: Final[str] = "Default"
@@ -161,9 +161,9 @@ class UserOptions:
     """Options for user validation."""
 
     __slots__ = (
+        'allowed_email_domains',
         'allowed_username_characters',
         'require_unique_email',
-        'allowed_email_domains',
     )
 
     def __init__(self) -> None:
