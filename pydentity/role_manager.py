@@ -1,11 +1,12 @@
 import logging
 from typing import Generic, Optional, Iterable, cast
 
-from pydentity.abc import IRoleValidator, ILookupNormalizer
+from pydentity.abc import IRoleValidator, ILookupNormalizer, ILogger
 from pydentity.abc.stores import IRoleStore, IRoleClaimStore
 from pydentity.exc import ArgumentNoneException, NotSupportedException
 from pydentity.identity_error_describer import IdentityErrorDescriber
 from pydentity.identity_result import IdentityResult
+from pydentity.loggers import role_manager_logger
 from pydentity.resources import Resources
 from pydentity.security.claims import Claim
 from pydentity.types import TRole
@@ -17,11 +18,11 @@ class RoleManager(Generic[TRole]):
     """Provides the APIs for managing roles in a persistence store."""
 
     __slots__ = (
-        'store',
-        'role_validators',
-        'key_normalizer',
         'error_describer',
+        'key_normalizer',
         'logger',
+        'role_validators',
+        'store',
     )
 
     def __init__(
@@ -31,7 +32,7 @@ class RoleManager(Generic[TRole]):
             role_validators: Optional[Iterable[IRoleValidator[TRole]]] = None,
             key_normalizer: Optional[ILookupNormalizer] = None,
             errors: Optional[IdentityErrorDescriber] = None,
-            logger: Optional[logging.Logger] = None
+            logger: Optional[ILogger["RoleManager"]] = None
     ) -> None:
         """
         Constructs a new instance of ``RoleManager[TRole]``.
@@ -49,7 +50,7 @@ class RoleManager(Generic[TRole]):
         self.role_validators = role_validators
         self.key_normalizer = key_normalizer
         self.error_describer: IdentityErrorDescriber = errors or IdentityErrorDescriber()
-        self.logger: logging.Logger = logger or logging.getLogger(self.__class__.__name__)
+        self.logger: logging.Logger = logger or role_manager_logger
 
     @property
     def supports_role_claims(self) -> bool:

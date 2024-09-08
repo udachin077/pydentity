@@ -14,7 +14,7 @@ from pydentity.authentication.cookie import (
 
 
 class AuthenticationBuilder:
-    __slots__ = ("_options", "_default_cookie_authentication_options",)
+    __slots__ = ("_options",)
 
     def __init__(self, options: AuthenticationOptions) -> None:
         self._options = options
@@ -42,7 +42,7 @@ class AuthenticationBuilder:
     def add_cookie(
             self,
             scheme: str = "Cookie",
-            options: CookieAuthenticationOptions = None,
+            options: CookieAuthenticationOptions | None = None
     ) -> "AuthenticationBuilder":
         return self.add_scheme(
             scheme,

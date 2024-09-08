@@ -1,15 +1,13 @@
-from typing import Generic, TYPE_CHECKING
+from typing import Generic
 
 from pydentity.abc import IUserClaimsPrincipalFactory
 from pydentity.exc import ArgumentNoneException
 from pydentity.identity_constants import IdentityConstants
 from pydentity.identity_options import IdentityOptions
+from pydentity.role_manager import RoleManager
 from pydentity.security.claims import ClaimsPrincipal, ClaimsIdentity, Claim, ClaimTypes
 from pydentity.types import TUser, TRole
-
-if TYPE_CHECKING:
-    from pydentity.user_manager import UserManager
-    from pydentity.role_manager import RoleManager
+from pydentity.user_manager import UserManager
 
 __all__ = ('UserClaimsPrincipalFactory',)
 
@@ -21,8 +19,8 @@ class UserClaimsPrincipalFactory(IUserClaimsPrincipalFactory[TUser], Generic[TUs
 
     def __init__(
             self,
-            user_manager: 'UserManager[TUser]',
-            role_manager: 'RoleManager[TRole]',
+            user_manager: UserManager[TUser],
+            role_manager: RoleManager[TRole],
             options: IdentityOptions
     ) -> None:
         self.user_manager = user_manager

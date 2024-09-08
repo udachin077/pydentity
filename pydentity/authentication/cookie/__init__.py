@@ -3,8 +3,7 @@ from datetime import timedelta
 from functools import lru_cache
 from typing import Literal
 
-from pydentity.authentication import AuthenticationResult
-from pydentity.authentication._base import DefaultAuthenticationDataProtector
+from pydentity.authentication._base import AuthenticationResult, DefaultAuthenticationDataProtector
 from pydentity.authentication.abc import IAuthenticationHandler, IAuthenticationDataProtector
 from pydentity.http.context import HttpContext
 from pydentity.security.claims import ClaimsPrincipal
@@ -20,7 +19,7 @@ __all__ = (
 
 @lru_cache
 def _get_cookie_name(scheme: str, name: str | None = None) -> str:
-    return f"FastAPI.{name or scheme}"
+    return f"{name or scheme}"
 
 
 class DefaultCookieAuthenticationProtector(DefaultAuthenticationDataProtector):
@@ -65,10 +64,7 @@ class CookieAuthenticationHandler(IAuthenticationHandler):
 
     protector: IAuthenticationDataProtector | None = None
 
-    def __init__(
-            self,
-            options: CookieAuthenticationOptions | None = None,
-    ):
+    def __init__(self, options: CookieAuthenticationOptions | None = None, ):
         self.options = options or CookieAuthenticationOptions()
 
     async def authenticate(self, context: HttpContext, scheme: str) -> AuthenticationResult:

@@ -1,4 +1,4 @@
-from abc import abstractmethod
+from abc import abstractmethod, ABC
 
 from pydentity.authentication import AuthenticationResult
 from pydentity.authentication.abc import IAuthenticationHandler, IAuthenticationSchemeProvider
@@ -57,3 +57,12 @@ class HttpContext:
         if scheme := await self._schemes.get_scheme(name):
             return scheme.handler
         raise InvalidOperationException(f"Scheme {name} not registered.")
+
+
+class IHttpContextAccessor(ABC):
+    def __init__(self, context: HttpContext):
+        self.__http_context = context
+
+    @property
+    def http_context(self) -> HttpContext:
+        return self.__http_context

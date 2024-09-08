@@ -1,24 +1,24 @@
 from abc import ABC, abstractmethod
 from typing import Optional, TYPE_CHECKING
 
-from pydentity.http.context import HttpContext
 from pydentity.security.claims import ClaimsPrincipal
 
 if TYPE_CHECKING:
-    from pydentity.authentication import AuthenticationResult, AuthenticationScheme
+    from pydentity.http.context import HttpContext
+    from pydentity.authentication._base import AuthenticationResult, AuthenticationScheme
 
 
 class IAuthenticationHandler(ABC):
     @abstractmethod
-    async def authenticate(self, context: HttpContext, scheme: str) -> "AuthenticationResult":
+    async def authenticate(self, context: "HttpContext", scheme: str) -> "AuthenticationResult":
         pass
 
     @abstractmethod
-    async def sign_in(self, context: HttpContext, scheme: str, principal: ClaimsPrincipal, **properties) -> None:
+    async def sign_in(self, context: "HttpContext", scheme: str, principal: ClaimsPrincipal, **properties) -> None:
         pass
 
     @abstractmethod
-    async def sign_out(self, context: HttpContext, scheme: str) -> None:
+    async def sign_out(self, context: "HttpContext", scheme: str) -> None:
         pass
 
 
