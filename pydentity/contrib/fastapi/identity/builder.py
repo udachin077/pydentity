@@ -13,7 +13,6 @@ from pydentity import (
 from pydentity.abc import (
     ILogger,
     IPasswordValidator,
-    IPersonalDataProtector,
     IRoleValidator,
     IUserClaimsPrincipalFactory,
     IUserConfirmation,

@@ -98,9 +98,8 @@ async def login(
         form.remember_me
     )
 
-    user = await signin_manager.user_manager.find_by_email(form.email)
-
     if result.succeeded:
+        user = await signin_manager.user_manager.find_by_email(form.email)
         return {"username": user.email}
 
     if result.requires_two_factor:
@@ -166,7 +165,7 @@ Options used to configure the claim types used for well known claims.
 | `email_claim_type`          | `str` | Gets or sets the `claim_types` used for the user email claim.      | `ClaimTypes.Email`          |
 | `security_stamp_claim_type` | `str` | Gets or sets the `claim_types` for the security stamp claim.       | `ClaimTypes.SecurityStamp`  |
 
-### PasswordOptions
+### `PasswordOptions`
 
 Specifies options for password requirements.
 
@@ -179,7 +178,7 @@ Specifies options for password requirements.
 | `required_uppercase`        | `bool` | Gets or sets a flag indicating if passwords must contain a upper case ASCII character. | `True`  |
 | `required_non_alphanumeric` | `bool` | Gets or sets a flag indicating if passwords must contain a non-alphanumeric character. | `True`  |
 
-### SignInOptions
+### `SignInOptions`
 
 Options for configuring sign-in.
 
@@ -247,6 +246,139 @@ builder.add_identity(UserStore, RoleStore).add_user_validator(CustomUserValidato
 builder = PydentityBuilder()
 builder.add_default_identity(UserStore, RoleStore).add_user_validator(CustomUserValidator)
 # [UserValidator, CustomUserValidator]
+```
+
+## Authentication
+
+### Cookie authentication
+
+```python
+
+from typing import Annotated
+
+from fastapi import FastAPI, Depends, APIRouter
+
+from pydentity import SignInManager
+from pydentity.contrib.fastapi import PydentityBuilder, use_authentication, use_authorization
+from pydentity.contrib.fastapi.authorization import authorize
+
+builder = PydentityBuilder()
+builder.add_default_identity(UserStore, RoleStore)
+builder.add_authorization()
+builder.build()
+
+app = FastAPI()
+use_authentication(app)
+use_authorization(app)
+
+
+@app.post("/logout", dependencies=[authorize()])
+async def logout(signin_manager: Annotated[SignInManager, Depends()]):
+    await signin_manager.sign_out()
+
+
+protected_router = APIRouter(prefix="/protect", dependencies=[authorize()])
+
+
+@protected_router.get("/roles")
+async def get_roles():
+    ...
+
+
+app.include_router(protected_router)
+```
+
+### JWT Bearer authentication
+```python
+from pydentity.authentication.bearer import TokenValidationParameters, JWTSecurityToken
+
+builder = PydentityBuilder()
+builder.add_authentication().add_jwt_bearer(
+    validation_parameters=TokenValidationParameters(
+        issuer_signing_key="<SECRETKEY>",
+        valid_algorithms=["HS256"],
+        valid_issuers=["pydentity"],
+        valid_audiences=["pydentity"],
+    )
+)
+
+
+@app.post("/login")
+async def login(
+        form: Annotated[LoginInputModel, Depends()],
+        signin_manager: Annotated[SignInManager, Depends()],
+):
+    result = await signin_manager.password_sign_in(
+        form.email,
+        form.password.get_secret_value(),
+        form.remember_me
+    )
+
+    if result.succeeded:
+        user = await signin_manager.user_manager.find_by_email(form.email)
+        principal = await signin_manager.create_user_principal(user)
+        token = JWTSecurityToken(
+            signin_key="<SECRETKEY>",
+            claims=principal.claims
+        )
+        return {"access_token": token.encode()}
+
+    if result.requires_two_factor:
+        return {"requiresTwoFactor": True}
+
+    if result.is_locked_out:
+        raise HTTPException(status_code=401, detail="Invalid login attempt.")
+
+    raise HTTPException(status_code=401, detail="Invalid login attempt.")
+```
+## Authorization
+
+### Add `AuthorizationPolicy`
+
+```python
+builder = PydentityBuilder()
+
+# Build AgePolicy
+AgePolicyBuilder = AuthorizationPolicyBuilder()
+AgePolicyBuilder.require_claim("age", 23)
+AgePolicy = AgePolicyBuilder.build()
+
+# Build CityAndRolePolicy
+CityAndRolePolicyBuilder = AuthorizationPolicyBuilder()
+CityAndRolePolicyBuilder.require_claim("city", "London")
+CityAndRolePolicyBuilder.require_role("admin")
+CityAndRolePolicy = CityAndRolePolicyBuilder.build()
+
+builder.add_authorization().add_policy("AgePolicy", AgePolicy).add_policy("CityAndRolePolicy", CityAndRolePolicy)
+builder.build()
+```
+
+### Use `authorize`
+
+The `authorize` dependency is used for authorization.
+
+```python
+@app.post("/logout", dependencies=[authorize()])
+async def logout(signin_manager: Annotated[SignInManager, Depends()]):
+    await signin_manager.sign_out()
+```
+
+It can be applied to individual routes as well as to routers in general.
+
+```python
+router = APIRouter(prefix="/secure", dependencies=[authorize("admin")])
+```
+
+`authorize` can take the name of a role, roles separated by commas, or a collection of roles and the name of a policy.
+
+```python
+authorize("role1")
+authorize("role1,role2")
+authorize(("role1", "role2",))
+authorize(policy="AgePolicy")
+authorize("role1", policy="AgePolicy")
+authorize("role1,role2", policy="AgePolicy")
+authorize({"role1", "role2"}, policy="AgePolicy")
 ```
 
 ## Logging

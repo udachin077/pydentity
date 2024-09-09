@@ -189,6 +189,7 @@ class AuthorizationOptions:
             raise ArgumentNoneException("name")
         if not policy_or_builder:
             raise ArgumentNoneException("policy_or_builder")
+
         if name in self._policy_map:
             raise InvalidOperationException(f"Policy already exists: {name}.")
 

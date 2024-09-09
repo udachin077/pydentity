@@ -1,4 +1,4 @@
-from collections.abc import Callable
+from collections.abc import Callable, Iterable
 from typing import overload, Annotated
 
 from fastapi import Depends
@@ -53,7 +53,7 @@ class AuthorizationBuilder:
         return self
 
 
-def authorize(roles: set[str] | str | None = None, *, policy: str | None = None):
+def authorize(roles: str | Iterable[str] | None = None, *, policy: str | None = None):
     async def wrapped(
             context: Annotated[AuthorizationHandlerContext, Depends(FastAPIAuthorizationHandlerContext)],
             provider: Annotated[IAuthorizationPolicyProvider, Depends(AuthorizationPolicyProvider)],
@@ -67,13 +67,15 @@ def authorize(roles: set[str] | str | None = None, *, policy: str | None = None)
     return Depends(wrapped)
 
 
-async def _check_roles(roles: set[str] | str | None, context: AuthorizationHandlerContext) -> None:
+async def _check_roles(roles: str | Iterable[str] | None, context: AuthorizationHandlerContext) -> None:
     if not context.user:
         raise AuthorizationError()
 
     if roles:
         if isinstance(roles, str):
             roles = set(roles.replace(" ", "").split(","))
+        else:
+            roles = set(roles)
 
         result = any([context.user.is_in_role(r) for r in roles])
 
@@ -86,12 +88,14 @@ async def _check_policy(
         context: AuthorizationHandlerContext,
         provider: IAuthorizationPolicyProvider
 ) -> None:
+    if default_policy := provider.get_default_policy():
+        for req in default_policy.requirements:
+            await req.handle(context)
+
     _policy = None
 
     if policy:
         _policy = provider.get_policy(policy)
-    else:
-        _policy = provider.get_default_policy()
 
     if not _policy:
         raise InvalidOperationException(f"The AuthorizationPolicy named: '{policy}' was not found.")
