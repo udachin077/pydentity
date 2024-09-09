@@ -1,3 +1,5 @@
+from collections.abc import Callable
+
 from pydentity import (
     AuthenticatorTokenProvider,
     DataProtectorTokenProvider,
@@ -100,6 +102,11 @@ class IdentityBuilder:
         self._dependencies.update({ILogger["RoleManager"]: logger})
         return self
 
-    def add_sign_in_manager_logger(self, logger: ILogger[SignInManager]) -> "IdentityBuilder":
+    def add_signin_manager_logger(self, logger: ILogger[SignInManager]) -> "IdentityBuilder":
         self._dependencies.update({ILogger["SignInManager"]: logger})
+        return self
+
+    def configure_options(self, configure: Callable[[IdentityOptions], None]) -> "IdentityBuilder":
+        options = self._dependencies[IdentityOptions]()  # call instance
+        configure(options)
         return self

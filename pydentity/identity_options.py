@@ -50,7 +50,7 @@ class ClaimsIdentityOptions:
 
     def __init__(self) -> None:
         self.role_claim_type = ClaimTypes.Role
-        """Gets or sets the ``ClaimTypes`` used for a Role claim. 
+        """Gets or sets the ``ClaimTypes`` used for a role claim. 
         Defaults to ``ClaimTypes.Role``."""
         self.username_claim_type = ClaimTypes.Name
         """Gets or sets the ``ClaimTypes`` used for the user name claim. 

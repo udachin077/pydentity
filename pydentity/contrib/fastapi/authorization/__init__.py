@@ -64,7 +64,7 @@ def authorize(roles: set[str] | str | None = None, *, policy: str | None = None)
         await _check_roles(roles, context)
         await _check_policy(policy, context, provider)
 
-    return wrapped
+    return Depends(wrapped)
 
 
 async def _check_roles(roles: set[str] | str | None, context: AuthorizationHandlerContext) -> None:

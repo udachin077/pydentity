@@ -62,7 +62,7 @@ class UserManager(Generic[TUser]):
 
     __slots__ = (
         '_logger',
-        '_store',
+        'store',
         '_token_providers',
         'error_describer',
         'key_normalizer',
@@ -110,7 +110,7 @@ class UserManager(Generic[TUser]):
         if not store:
             raise ArgumentNoneException('store')
 
-        self._store = store
+        self.store = store
         self.options: IdentityOptions = options or IdentityOptions()
         self.password_hasher: IPasswordHasher[TUser] = password_hasher or Argon2PasswordHasher()
         self.password_validators = password_validators
@@ -131,7 +131,7 @@ class UserManager(Generic[TUser]):
 
         :return:
         """
-        return issubclass(type(self._store), IUserAuthenticationTokenStore)
+        return issubclass(type(self.store), IUserAuthenticationTokenStore)
 
     @property
     def supports_user_authenticator_key(self) -> bool:
@@ -141,7 +141,7 @@ class UserManager(Generic[TUser]):
 
         :return:
         """
-        return issubclass(type(self._store), IUserAuthenticatorKeyStore)
+        return issubclass(type(self.store), IUserAuthenticatorKeyStore)
 
     @property
     def supports_user_two_factor_recovery_codes(self) -> bool:
@@ -151,7 +151,7 @@ class UserManager(Generic[TUser]):
 
         :return:
         """
-        return issubclass(type(self._store), IUserTwoFactorRecoveryCodeStore)
+        return issubclass(type(self.store), IUserTwoFactorRecoveryCodeStore)
 
     @property
     def supports_user_two_factor(self) -> bool:
@@ -161,7 +161,7 @@ class UserManager(Generic[TUser]):
 
         :return:
         """
-        return issubclass(type(self._store), IUserTwoFactorStore)
+        return issubclass(type(self.store), IUserTwoFactorStore)
 
     @property
     def supports_user_password(self) -> bool:
@@ -171,7 +171,7 @@ class UserManager(Generic[TUser]):
 
         :return:
         """
-        return issubclass(type(self._store), IUserPasswordStore)
+        return issubclass(type(self.store), IUserPasswordStore)
 
     @property
     def supports_user_security_stamp(self) -> bool:
@@ -181,7 +181,7 @@ class UserManager(Generic[TUser]):
 
         :return:
         """
-        return issubclass(type(self._store), IUserSecurityStampStore)
+        return issubclass(type(self.store), IUserSecurityStampStore)
 
     @property
     def supports_user_role(self) -> bool:
@@ -191,7 +191,7 @@ class UserManager(Generic[TUser]):
 
         :return:
         """
-        return issubclass(type(self._store), IUserRoleStore)
+        return issubclass(type(self.store), IUserRoleStore)
 
     @property
     def supports_user_login(self) -> bool:
@@ -201,7 +201,7 @@ class UserManager(Generic[TUser]):
 
         :return:
         """
-        return issubclass(type(self._store), IUserLoginStore)
+        return issubclass(type(self.store), IUserLoginStore)
 
     @property
     def supports_user_email(self) -> bool:
@@ -211,7 +211,7 @@ class UserManager(Generic[TUser]):
 
         :return:
         """
-        return issubclass(type(self._store), IUserEmailStore)
+        return issubclass(type(self.store), IUserEmailStore)
 
     @property
     def supports_user_phone_number(self) -> bool:
@@ -221,7 +221,7 @@ class UserManager(Generic[TUser]):
 
         :return:
         """
-        return issubclass(type(self._store), IUserPhoneNumberStore)
+        return issubclass(type(self.store), IUserPhoneNumberStore)
 
     @property
     def supports_user_claim(self) -> bool:
@@ -231,7 +231,7 @@ class UserManager(Generic[TUser]):
 
         :return:
         """
-        return issubclass(type(self._store), IUserClaimStore)
+        return issubclass(type(self.store), IUserClaimStore)
 
     @property
     def supports_user_lockout(self) -> bool:
@@ -241,7 +241,7 @@ class UserManager(Generic[TUser]):
 
         :return:
         """
-        return issubclass(type(self._store), IUserLockoutStore)
+        return issubclass(type(self.store), IUserLockoutStore)
 
     def register_token_provider(self, provider_name: str, provider: IUserTwoFactorTokenProvider[TUser]) -> None:
         """
@@ -260,7 +260,7 @@ class UserManager(Generic[TUser]):
 
     async def all(self) -> list[TUser]:
         """Get all auth."""
-        return await self._store.all()
+        return await self.store.all()
 
     @overload
     async def get_username(self, user: TUser) -> Optional[str]:
@@ -289,7 +289,7 @@ class UserManager(Generic[TUser]):
         if isinstance(user, ClaimsPrincipal):
             return user.find_first_value(ClaimTypes.Name)
         else:
-            return await self._store.get_username(user)
+            return await self.store.get_username(user)
 
     async def set_username(self, user: TUser, username: Optional[str] = None) -> IdentityResult:
         """
@@ -302,7 +302,7 @@ class UserManager(Generic[TUser]):
         if not user:
             raise ArgumentNoneException('user')
 
-        await self._store.set_username(user, username)
+        await self.store.set_username(user, username)
         await self._update_security_stamp_internal(user)
         return await self._update_user(user)
 
@@ -333,7 +333,7 @@ class UserManager(Generic[TUser]):
         if isinstance(user, ClaimsPrincipal):
             return user.find_first_value(ClaimTypes.NameIdentifier)
         else:
-            return await self._store.get_user_id(user)
+            return await self.store.get_user_id(user)
 
     async def get_user(self, principal: ClaimsPrincipal) -> Optional[TUser]:
         """
@@ -401,7 +401,7 @@ class UserManager(Generic[TUser]):
 
         await self.update_normalized_username(user)
         await self.update_normalized_email(user)
-        return await self._store.create(user)
+        return await self.store.create(user)
 
     async def update(self, user: TUser) -> IdentityResult:
         """
@@ -425,7 +425,7 @@ class UserManager(Generic[TUser]):
         if not user:
             raise ArgumentNoneException('user')
 
-        return await self._store.delete(user)
+        return await self.store.delete(user)
 
     async def find_by_id(self, user_id: str) -> Optional[TUser]:
         """
@@ -437,7 +437,7 @@ class UserManager(Generic[TUser]):
         if not user_id:
             raise ArgumentNoneException('user_id')
 
-        return await self._store.find_by_id(user_id)
+        return await self.store.find_by_id(user_id)
 
     async def find_by_name(self, username: str) -> Optional[TUser]:
         """
@@ -449,7 +449,7 @@ class UserManager(Generic[TUser]):
         if not username:
             raise ArgumentNoneException('username')
 
-        return await self._store.find_by_name(self._normalize_name(username))
+        return await self.store.find_by_name(self._normalize_name(username))
 
     async def update_normalized_username(self, user: TUser) -> None:
         """
@@ -458,8 +458,8 @@ class UserManager(Generic[TUser]):
         :param user: The user whose username should be normalized and updated.
         :return:
         """
-        normalized_username = self._normalize_name(await self._store.get_username(user))
-        await self._store.set_normalized_username(user, normalized_username)
+        normalized_username = self._normalize_name(await self.store.get_username(user))
+        await self.store.set_normalized_username(user, normalized_username)
 
     async def check_password(self, user: TUser, password: str) -> bool:
         """
@@ -1663,64 +1663,64 @@ class UserManager(Generic[TUser]):
 
         await self.update_normalized_username(user)
         await self.update_normalized_email(user)
-        return await self._store.update(user)
+        return await self.store.update(user)
 
     def _get_authentication_token_store(self) -> IUserAuthenticationTokenStore[TUser]:
         if self.supports_user_authentication_tokens:
-            return cast(IUserAuthenticationTokenStore[TUser], self._store)
+            return cast(IUserAuthenticationTokenStore[TUser], self.store)
         raise NotSupportedException(Resources['StoreNotIUserAuthenticationTokenStore'])
 
     def _get_authenticator_key_store(self) -> IUserAuthenticatorKeyStore[TUser]:
         if self.supports_user_authenticator_key:
-            return cast(IUserAuthenticatorKeyStore[TUser], self._store)
+            return cast(IUserAuthenticatorKeyStore[TUser], self.store)
         raise NotSupportedException(Resources['StoreNotIUserAuthenticatorKeyStore'])
 
     def _get_recovery_code_store(self) -> IUserTwoFactorRecoveryCodeStore[TUser]:
         if self.supports_user_two_factor_recovery_codes:
-            return cast(IUserTwoFactorRecoveryCodeStore[TUser], self._store)
+            return cast(IUserTwoFactorRecoveryCodeStore[TUser], self.store)
         raise NotSupportedException(Resources['StoreNotIUserTwoFactorRecoveryCodeStore'])
 
     def _get_two_factor_store(self) -> IUserTwoFactorStore[TUser]:
         if self.supports_user_two_factor:
-            return cast(IUserTwoFactorStore[TUser], self._store)
+            return cast(IUserTwoFactorStore[TUser], self.store)
         raise NotSupportedException(Resources['StoreNotIUserTwoFactorStore'])
 
     def _get_password_store(self) -> IUserPasswordStore[TUser]:
         if self.supports_user_password:
-            return cast(IUserPasswordStore[TUser], self._store)
+            return cast(IUserPasswordStore[TUser], self.store)
         raise NotSupportedException(Resources['StoreNotIUserPasswordStore'])
 
     def _get_security_store(self) -> IUserSecurityStampStore[TUser]:
         if self.supports_user_security_stamp:
-            return cast(IUserSecurityStampStore[TUser], self._store)
+            return cast(IUserSecurityStampStore[TUser], self.store)
         raise NotSupportedException(Resources['StoreNotIUserSecurityStampStore'])
 
     def _get_user_role_store(self) -> IUserRoleStore[TUser]:
         if self.supports_user_role:
-            return cast(IUserRoleStore[TUser], self._store)
+            return cast(IUserRoleStore[TUser], self.store)
         raise NotSupportedException(Resources['StoreNotIUserRoleStore'])
 
     def _get_login_store(self) -> IUserLoginStore:
         if self.supports_user_login:
-            return cast(IUserLoginStore[TUser], self._store)
+            return cast(IUserLoginStore[TUser], self.store)
         raise NotSupportedException(Resources['StoreNotIUserLoginStore'])
 
     def _get_email_store(self) -> IUserEmailStore[TUser]:
         if self.supports_user_email:
-            return cast(IUserEmailStore[TUser], self._store)
+            return cast(IUserEmailStore[TUser], self.store)
         raise NotSupportedException(Resources['StoreNotIUserEmailStore'])
 
     def _get_phone_number_store(self) -> IUserPhoneNumberStore[TUser]:
         if self.supports_user_phone_number:
-            return cast(IUserPhoneNumberStore[TUser], self._store)
+            return cast(IUserPhoneNumberStore[TUser], self.store)
         raise NotSupportedException(Resources['StoreNotIUserPhoneNumberStore'])
 
     def _get_claim_store(self) -> IUserClaimStore[TUser]:
         if self.supports_user_claim:
-            return cast(IUserClaimStore[TUser], self._store)
+            return cast(IUserClaimStore[TUser], self.store)
         raise NotSupportedException(Resources['StoreNotIUserClaimStore'])
 
     def _get_user_lockout_store(self) -> IUserLockoutStore[TUser]:
         if self.supports_user_lockout:
-            return cast(IUserLockoutStore[TUser], self._store)
+            return cast(IUserLockoutStore[TUser], self.store)
         raise NotSupportedException(Resources['StoreNotIUserLockoutStore'])

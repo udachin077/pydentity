@@ -1,5 +1,5 @@
 import inspect
-from collections.abc import Iterable
+from collections.abc import Iterable, Callable
 from typing import get_origin, Annotated, get_args, Union, Generic
 
 from fastapi import Depends, FastAPI
@@ -78,6 +78,7 @@ class PydentityBuilder:
             self,
             user_store: type[IUserStore],
             role_store: type[IRoleStore],
+            configure: Callable[[IdentityOptions], None] | None = None
     ) -> IdentityBuilder:
         self.add_authentication().add_identity_cookies()
         self._dependencies.update({
@@ -99,6 +100,10 @@ class PydentityBuilder:
             IUserClaimsPrincipalFactory[TUser]: UserClaimsPrincipalFactory,
             SignInManager[TUser]: SignInManager,
         })
+
+        if configure:
+            configure(self._dependencies[IdentityOptions]())
+
         return IdentityBuilder(self._dependencies)
 
     def add_default_identity(
