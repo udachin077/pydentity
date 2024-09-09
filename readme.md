@@ -1,4 +1,4 @@
-<h1 align="center">Pydentity</h1>
+from pydentity import IdentityResultfrom pydentity.types import TUser<h1 align="center">Pydentity</h1>
 
 ## Install
 
@@ -220,13 +220,34 @@ Options for user validation.
 | `require_unique_email`        | `bool`          | Gets or sets a flag indicating whether the application requires unique emails for its auth. | `True`                                                               |
 | `allowed_email_domains`       | `Iterable[str]` | Gets or sets a list of available domains for email.                                         | `None`                                                               |
 
-### `StoreOptions`
+## Validators
 
-Used for store specific options.
+You can add your own validators using `add_user_validator`, `add_password_validator` and `add_role_validator`.
 
-| Attribute               | Type   | Description                                                                                                                                                                  | Default |
-|-------------------------|--------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------|
-| `protect_personal_data` | `bool` | If set to True, the store must protect all personally identifying data for a user. This will be enforced by requiring the store to implement ``IProtectedUserStore[TUser]``. | `False` |
+```python
+from pydentity.abc import IUserValidator
+
+
+class CustomUserValidator(IUserValidator):
+    async def validate(self, manager, user) -> IdentityResult:
+        pass
+```
+
+`add_identity` does not add validators by default.
+
+```python
+builder = PydentityBuilder()
+builder.add_identity(UserStore, RoleStore).add_user_validator(CustomUserValidator)
+# [CustomUserValidator]
+```
+
+`add_default_identity` adds standard validators.
+
+```python
+builder = PydentityBuilder()
+builder.add_default_identity(UserStore, RoleStore).add_user_validator(CustomUserValidator)
+# [UserValidator, CustomUserValidator]
+```
 
 ## Logging
 

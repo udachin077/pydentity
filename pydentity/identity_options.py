@@ -178,17 +178,6 @@ class UserOptions:
         If the ``None`` then any domains are available."""
 
 
-class StoreOptions:
-    """Used for store specific options."""
-
-    __slots__ = ('protect_personal_data',)
-
-    def __init__(self) -> None:
-        self.protect_personal_data: bool = False
-        """If set to True, the store must protect all personally identifying data for a user. 
-        This will be enforced by requiring the store to implement ``IProtectedUserStore[TUser]``."""
-
-
 class IdentityOptions:
     """Represents all the options you can use to configure the identity system."""
 

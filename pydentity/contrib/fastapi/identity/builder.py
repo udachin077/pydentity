@@ -84,9 +84,6 @@ class IdentityBuilder:
         self._dependencies.update({SignInManager[TUser], manager})
         return self
 
-    def add_personal_data_protection(self, protector: IPersonalDataProtector) -> "IdentityBuilder":
-        return self
-
     def add_default_token_providers(self) -> "IdentityBuilder":
         self.add_token_provider(TokenOptions.DEFAULT_PROVIDER, DataProtectorTokenProvider())
         self.add_token_provider(TokenOptions.DEFAULT_EMAIL_PROVIDER, EmailTokenProvider())
