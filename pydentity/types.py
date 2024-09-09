@@ -22,7 +22,12 @@ __all__ = (
     'TUserLogin',
     'TUserToken',
     'TRoleClaim',
+    'TRequest',
+    'TResponse'
 )
+
+TRequest = TypeVar('TRequest')
+TResponse = TypeVar('TResponse')
 
 _T = TypeVar('_T')
 TKey = TypeVar('TKey', int, str, UUID, )

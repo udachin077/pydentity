@@ -1,20 +1,19 @@
-from abc import abstractmethod
 from collections.abc import Callable, Awaitable, Iterable
 from inspect import isfunction
 from typing import Optional, Literal, Any, overload
 
-from pydentity.authorization.abc import IAuthorizationPolicyProvider
+from pydentity.authorization.abc import IAuthorizationPolicyProvider, IAuthorizationHandler
 from pydentity.exc import ArgumentNoneException, InvalidOperationException
 from pydentity.security.claims import ClaimsPrincipal
+from pydentity.types import TRequest
 
 __all__ = (
-    'AuthorizationError',
-    'AuthorizationOptions',
-    'AuthorizationPolicy',
-    'AuthorizationPolicyBuilder',
-    'AuthorizationHandlerContext',
-    'AuthorizationHandler',
-    'AuthorizationPolicyProvider',
+    "AuthorizationError",
+    "AuthorizationHandlerContext",
+    "AuthorizationOptions",
+    "AuthorizationPolicy",
+    "AuthorizationPolicyBuilder",
+    "AuthorizationPolicyProvider",
 )
 
 
@@ -22,11 +21,11 @@ class AuthorizationError(Exception):
     pass
 
 
-class AuthorizationHandlerContext[TRequest]:
+class AuthorizationHandlerContext:
     __slots__ = (
-        '_request',
-        '_fail_called',
-        '_succeeded_called',
+        "_request",
+        "_fail_called",
+        "_succeeded_called",
     )
 
     def __init__(self, request: TRequest) -> None:
@@ -53,42 +52,36 @@ class AuthorizationHandlerContext[TRequest]:
         self._succeeded_called = True
 
 
-class AuthorizationHandler:
-    @abstractmethod
-    async def handle(self, context: AuthorizationHandlerContext) -> None:
-        pass
-
-
 class AuthorizationPolicy:
-    __slots__ = ('requirements',)
+    __slots__ = ("requirements",)
 
-    def __init__(self, requirements: Iterable[AuthorizationHandler]) -> None:
+    def __init__(self, requirements: Iterable[IAuthorizationHandler]) -> None:
         requirements = requirements or []
-        self.requirements: list[AuthorizationHandler] = list(requirements)
+        self.requirements: list[IAuthorizationHandler] = list(requirements)
 
 
-class RolesAuthorizationRequirement(AuthorizationHandler):
-    __slots__ = ('allowed_roles', 'mode',)
+class RolesAuthorizationRequirement(IAuthorizationHandler):
+    __slots__ = ("allowed_roles", "mode",)
 
-    def __init__(self, *allowed_roles: str, mode: Literal['all', 'any'] = 'any') -> None:
+    def __init__(self, *allowed_roles: str, mode: Literal["all", "any"] = "any") -> None:
         if not allowed_roles:
-            raise ArgumentNoneException('allowed_roles')
+            raise ArgumentNoneException("allowed_roles")
 
         self.allowed_roles = allowed_roles
         self.mode = mode
 
-    async def handle(self, context: 'AuthorizationHandlerContext') -> None:
+    async def handle(self, context: "AuthorizationHandlerContext") -> None:
         if context.user:
             if context.user.is_in_roles(*self.allowed_roles, mode=self.mode):
                 context.succeed()
 
 
-class ClaimsAuthorizationRequirement(AuthorizationHandler):
-    __slots__ = ('claim_type', 'allowed_values',)
+class ClaimsAuthorizationRequirement(IAuthorizationHandler):
+    __slots__ = ("claim_type", "allowed_values",)
 
     def __init__(self, claim_type: str, *allowed_values: Any) -> None:
         if not claim_type:
-            raise ArgumentNoneException('claim_type')
+            raise ArgumentNoneException("claim_type")
 
         self.claim_type = claim_type
         self.allowed_values = allowed_values
@@ -103,12 +96,12 @@ class ClaimsAuthorizationRequirement(AuthorizationHandler):
                 context.succeed()
 
 
-class NameAuthorizationRequirement(AuthorizationHandler):
-    __slots__ = ('required_name',)
+class NameAuthorizationRequirement(IAuthorizationHandler):
+    __slots__ = ("required_name",)
 
     def __init__(self, required_name: str) -> None:
         if not required_name:
-            raise ArgumentNoneException('required_name')
+            raise ArgumentNoneException("required_name")
 
         self.required_name = required_name
 
@@ -117,12 +110,12 @@ class NameAuthorizationRequirement(AuthorizationHandler):
             context.succeed()
 
 
-class AssertionRequirement(AuthorizationHandler):
-    __slots__ = ('handler',)
+class AssertionRequirement(IAuthorizationHandler):
+    __slots__ = ("handler",)
 
     def __init__(self, handler: Callable[[AuthorizationHandlerContext], Awaitable[bool]]) -> None:
         if not handler:
-            raise ArgumentNoneException('handler')
+            raise ArgumentNoneException("handler")
 
         self.handler = handler
 
@@ -131,40 +124,40 @@ class AssertionRequirement(AuthorizationHandler):
             context.succeed()
 
 
-class DenyAnonymousAuthorizationRequirement(AuthorizationHandler):
+class DenyAnonymousAuthorizationRequirement(IAuthorizationHandler):
     async def handle(self, context: AuthorizationHandlerContext) -> None:
         if context.is_authenticated:
             context.succeed()
 
 
 class AuthorizationPolicyBuilder:
-    __slots__ = ('_requirements',)
+    __slots__ = ("_requirements",)
 
     def __init__(self) -> None:
-        self._requirements: list[AuthorizationHandler] = []
+        self._requirements: list[IAuthorizationHandler] = []
 
-    def add_requirements(self, *requirements: AuthorizationHandler) -> 'AuthorizationPolicyBuilder':
+    def add_requirements(self, *requirements: IAuthorizationHandler) -> "AuthorizationPolicyBuilder":
         if not requirements:
-            raise ArgumentNoneException('requirements')
+            raise ArgumentNoneException("requirements")
         self._requirements.extend(requirements)
         return self
 
-    def require_claim(self, claim_type: str, *allowed_values: Any) -> 'AuthorizationPolicyBuilder':
+    def require_claim(self, claim_type: str, *allowed_values: Any) -> "AuthorizationPolicyBuilder":
         self._requirements.append(ClaimsAuthorizationRequirement(claim_type, *allowed_values))
         return self
 
-    def require_role(self, *roles: str, mode: Literal['all', 'any'] = 'any') -> 'AuthorizationPolicyBuilder':
+    def require_role(self, *roles: str, mode: Literal["all", "any"] = "any") -> "AuthorizationPolicyBuilder":
         self._requirements.append(RolesAuthorizationRequirement(*roles, mode=mode))
         return self
 
     def require_assertion(
             self,
             handler: Callable[[AuthorizationHandlerContext], Awaitable[bool]]
-    ) -> 'AuthorizationPolicyBuilder':
+    ) -> "AuthorizationPolicyBuilder":
         self._requirements.append(AssertionRequirement(handler))
         return self
 
-    def require_authenticated_user(self) -> 'AuthorizationPolicyBuilder':
+    def require_authenticated_user(self) -> "AuthorizationPolicyBuilder":
         self._requirements.append(DenyAnonymousAuthorizationRequirement())
         return self
 
@@ -173,7 +166,7 @@ class AuthorizationPolicyBuilder:
 
 
 class AuthorizationOptions:
-    __slots__ = ('_policy_map', 'default_policy',)
+    __slots__ = ("_policy_map", "default_policy",)
 
     def __init__(self):
         self._policy_map: dict[str, AuthorizationPolicy] = {}
@@ -193,11 +186,11 @@ class AuthorizationOptions:
             policy_or_builder: AuthorizationPolicy | Callable[[AuthorizationPolicyBuilder], None]
     ) -> None:
         if not name:
-            raise ArgumentNoneException('name')
+            raise ArgumentNoneException("name")
         if not policy_or_builder:
-            raise ArgumentNoneException('policy_or_builder')
+            raise ArgumentNoneException("policy_or_builder")
         if name in self._policy_map:
-            raise InvalidOperationException(f'Policy already exists: {name}.')
+            raise InvalidOperationException(f"Policy already exists: {name}.")
 
         if isinstance(policy_or_builder, AuthorizationPolicy):
             self._policy_map[name] = policy_or_builder
@@ -216,8 +209,8 @@ class AuthorizationPolicyProvider(IAuthorizationPolicyProvider):
 
     def get_policy(self, name: str) -> Optional[AuthorizationPolicy]:
         if not name:
-            raise ArgumentNoneException('name')
-        return getattr(self.options, '_policy_map').get(name, None)
+            raise ArgumentNoneException("name")
+        return getattr(self.options, "_policy_map").get(name, None)
 
     def get_default_policy(self) -> Optional[AuthorizationPolicy]:
         return self.options.default_policy
