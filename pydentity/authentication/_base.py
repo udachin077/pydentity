@@ -182,7 +182,7 @@ class DefaultAuthenticationDataProtector(IAuthenticationDataProtector):
 
     def protect(self, data: dict | None) -> str | None:
         if data:
-            return str(self.__fernet.encrypt(json.dumps(data, separators=(",", ":")).encode()))
+            return self.__fernet.encrypt(json.dumps(data, separators=(",", ":")).encode()).decode()
         return data
 
     def unprotect(self, data: str | None) -> dict | None:

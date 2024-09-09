@@ -1,9 +1,9 @@
 from collections.abc import Callable
-from typing import overload
+from typing import overload, Annotated
 
 from fastapi import Depends
+from starlette.requests import Request
 
-from pydentity import SignInManager
 from pydentity.authorization import (
     AuthorizationError,
     AuthorizationHandlerContext,
@@ -12,12 +12,18 @@ from pydentity.authorization import (
     AuthorizationPolicyBuilder,
     AuthorizationPolicyProvider,
 )
+from pydentity.authorization.abc import IAuthorizationPolicyProvider
 from pydentity.exc import InvalidOperationException
 
 __all__ = (
     "AuthorizationBuilder",
     "authorize",
 )
+
+
+class FastAPIAuthorizationHandlerContext(AuthorizationHandlerContext):
+    def __init__(self, request: Request):
+        super().__init__(request)
 
 
 class AuthorizationBuilder:
@@ -48,52 +54,44 @@ class AuthorizationBuilder:
 
 
 def authorize(roles: set[str] | str | None = None, *, policy: str | None = None):
-    """
-
-    :param roles:
-    :param policy:
-    :return:
-    """
-
     async def wrapped(
-            context: AuthorizationHandlerContext = Depends(),
-            provider: AuthorizationPolicyProvider = Depends(),
-            manager: SignInManager = Depends()
+            context: Annotated[AuthorizationHandlerContext, Depends(FastAPIAuthorizationHandlerContext)],
+            provider: Annotated[IAuthorizationPolicyProvider, Depends(AuthorizationPolicyProvider)],
     ):
         if not (context and context.is_authenticated):
             raise AuthorizationError()
 
-        if not await manager.validate_security_stamp(context.user):
-            raise AuthorizationError()
-
-        if roles:
-            await _check_roles(roles, context)
-
-        if policy:
-            await _check_policy(policy, context, provider)
+        await _check_roles(roles, context)
+        await _check_policy(policy, context, provider)
 
     return wrapped
 
 
-async def _check_roles(roles: set[str] | str, context: AuthorizationHandlerContext) -> None:
+async def _check_roles(roles: set[str] | str | None, context: AuthorizationHandlerContext) -> None:
     if not context.user:
         raise AuthorizationError()
 
-    if isinstance(roles, str):
-        roles = set(roles.replace(" ", "").split(","))
+    if roles:
+        if isinstance(roles, str):
+            roles = set(roles.replace(" ", "").split(","))
 
-    result = any([context.user.is_in_role(r) for r in roles])
+        result = any([context.user.is_in_role(r) for r in roles])
 
-    if not result:
-        raise AuthorizationError()
+        if not result:
+            raise AuthorizationError()
 
 
 async def _check_policy(
-        policy: str,
+        policy: str | None,
         context: AuthorizationHandlerContext,
-        provider: AuthorizationPolicyProvider
+        provider: IAuthorizationPolicyProvider
 ) -> None:
-    _policy = provider.get_policy(policy)
+    _policy = None
+
+    if policy:
+        _policy = provider.get_policy(policy)
+    else:
+        _policy = provider.get_default_policy()
 
     if not _policy:
         raise InvalidOperationException(f"The AuthorizationPolicy named: '{policy}' was not found.")
