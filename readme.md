@@ -1,10 +1,13 @@
 <h1 align="center">Pydentity</h1>
 
-## Install
+[//]: # (## Install)
 
-```
-pip install fastapi-pydentity
-```
+[//]: # ()
+[//]: # (```)
+
+[//]: # (pip install fastapi-pydentity)
+
+[//]: # (```)
 
 ## Base usage
 
