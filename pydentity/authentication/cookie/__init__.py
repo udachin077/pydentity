@@ -19,7 +19,7 @@ __all__ = (
 
 @lru_cache
 def _get_cookie_name(scheme: str, name: str | None = None) -> str:
-    return f"{name or scheme}"
+    return name or scheme
 
 
 class DefaultCookieAuthenticationProtector(DefaultAuthenticationDataProtector):

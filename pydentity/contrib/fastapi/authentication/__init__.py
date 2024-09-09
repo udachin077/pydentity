@@ -2,15 +2,59 @@ from collections.abc import Callable
 from datetime import timedelta
 from typing import overload
 
+from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.requests import Request
+from starlette.types import ASGIApp, Scope, Receive, Send
+
 from pydentity import IdentityConstants
-from pydentity.authentication import AuthenticationOptions, AuthenticationScheme, AuthenticationSchemeBuilder
-from pydentity.authentication.abc import IAuthenticationDataProtector
+from pydentity.authentication import (
+    AuthenticationError,
+    AuthenticationOptions,
+    AuthenticationScheme,
+    AuthenticationSchemeBuilder,
+)
+from pydentity.authentication.abc import IAuthenticationDataProtector, IAuthenticationSchemeProvider
 from pydentity.authentication.bearer import TokenValidationParameters, JWTBearerAuthenticationHandler
 from pydentity.authentication.cookie import (
     CookieAuthenticationOptions,
     CookieAuthenticationHandler,
     DefaultCookieAuthenticationProtector,
 )
+from pydentity.contrib.fastapi.dependencies.http import HttpContext
+
+
+class AuthenticationMiddleware(BaseHTTPMiddleware):
+    __slots__ = ("app", "schemes", "on_error",)
+
+    def __init__(self, app: ASGIApp, schemes: type[IAuthenticationSchemeProvider]) -> None:
+        super().__init__(app)
+        self.app = app
+        self.schemes = schemes()
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        if scope["type"] not in ["http", "websocket"]:
+            await self.app(scope, receive, send)
+            return
+
+        scope["user"] = None
+        scope["auth"] = False
+
+        context = HttpContext(Request(scope), None, self.schemes)  # noqa
+
+        try:
+            default_authenticate = await self.schemes.get_default_authentication_scheme()
+
+            if default_authenticate:
+                result = await context.authenticate(default_authenticate.name)
+
+                if result.principal and result.principal.identities:
+                    scope["user"] = result.principal
+                    scope["auth"] = result.principal.identity.is_authenticated
+
+        except AuthenticationError as exc:
+            pass
+
+        await self.app(scope, receive, send)
 
 
 class AuthenticationBuilder:

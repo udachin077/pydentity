@@ -2,7 +2,9 @@ import inspect
 from collections.abc import Iterable
 from typing import get_origin, Annotated, get_args, Union, Generic
 
-from fastapi import Depends
+from fastapi import Depends, FastAPI
+from starlette.responses import PlainTextResponse
+from starlette.types import ExceptionHandler
 
 from pydentity import (
     Argon2PasswordHasher,
@@ -16,7 +18,7 @@ from pydentity import (
     UpperLookupNormalizer,
     UserClaimsPrincipalFactory,
     UserManager,
-    UserValidator,
+    UserValidator, IdentityConstants,
 )
 from pydentity.abc import (
     ILogger,
@@ -29,10 +31,10 @@ from pydentity.abc import (
     IUserValidator,
 )
 from pydentity.abc.stores import IUserStore, IRoleStore
-from pydentity.authentication import AuthenticationOptions, AuthenticationSchemeProvider
+from pydentity.authentication import AuthenticationOptions, AuthenticationSchemeProvider, AuthenticationError
 from pydentity.authentication.abc import IAuthenticationSchemeProvider
-from pydentity.authorization import AuthorizationOptions, AuthorizationPolicyProvider
-from pydentity.contrib.fastapi.authentication import AuthenticationBuilder
+from pydentity.authorization import AuthorizationOptions, AuthorizationPolicyProvider, AuthorizationError
+from pydentity.contrib.fastapi.authentication import AuthenticationBuilder, AuthenticationMiddleware
 from pydentity.contrib.fastapi.authorization import AuthorizationBuilder
 from pydentity.contrib.fastapi.dependencies import (
     Dependencies,
@@ -51,6 +53,10 @@ class PydentityBuilder:
     def __init__(self):
         self._dependencies = Dependencies()
 
+    @property
+    def dependencies(self) -> Dependencies:
+        return self._dependencies
+
     def add_authentication(self) -> AuthenticationBuilder:
         self._dependencies.update({
             IAuthenticationSchemeProvider: AuthenticationSchemeProvider,
@@ -58,6 +64,8 @@ class PydentityBuilder:
             IHttpContextAccessor: HttpContextAccessor,
         })
         options = AuthenticationOptions()
+        options.default_authentication_scheme = IdentityConstants.ApplicationScheme
+        options.default_sign_in_scheme = IdentityConstants.ExternalScheme
         AuthenticationSchemeProvider.options = options
         return AuthenticationBuilder(options)
 
@@ -137,3 +145,25 @@ class PydentityBuilder:
                         parameters.append(parameter)
 
             cls.__signature__ = signature.replace(parameters=parameters)
+
+
+def use_authentication(app: FastAPI, on_error: ExceptionHandler | None = None):
+    app.add_middleware(AuthenticationMiddleware, schemes=AuthenticationSchemeProvider)
+
+    if on_error:
+        app.add_exception_handler(AuthenticationError, on_error)
+    else:
+        app.add_exception_handler(
+            AuthenticationError,
+            lambda req, exc: PlainTextResponse('Unauthorized', status_code=401)
+        )
+
+
+def use_authorization(app: FastAPI, on_error: ExceptionHandler | None = None):
+    if on_error:
+        app.add_exception_handler(AuthorizationError, on_error)
+    else:
+        app.add_exception_handler(
+            AuthorizationError,
+            lambda req, exc: PlainTextResponse('Forbidden', status_code=403)
+        )
