@@ -1,4 +1,4 @@
-from pydentity import IdentityResultfrom pydentity.types import TUser<h1 align="center">Pydentity</h1>
+<h1 align="center">Pydentity</h1>
 
 ## Install
 
