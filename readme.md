@@ -166,7 +166,7 @@ Options used to configure the claim types used for well known claims.
 | `email_claim_type`          | `str` | Gets or sets the `claim_types` used for the user email claim.      | `ClaimTypes.Email`          |
 | `security_stamp_claim_type` | `str` | Gets or sets the `claim_types` for the security stamp claim.       | `ClaimTypes.SecurityStamp`  |
 
-### `PasswordOptions`
+### PasswordOptions
 
 Specifies options for password requirements.
 
@@ -179,7 +179,7 @@ Specifies options for password requirements.
 | `required_uppercase`        | `bool` | Gets or sets a flag indicating if passwords must contain a upper case ASCII character. | `True`  |
 | `required_non_alphanumeric` | `bool` | Gets or sets a flag indicating if passwords must contain a non-alphanumeric character. | `True`  |
 
-### `SignInOptions`
+### SignInOptions
 
 Options for configuring sign-in.
 
