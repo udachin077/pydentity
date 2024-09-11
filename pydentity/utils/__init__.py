@@ -1,5 +1,6 @@
 import base64
 from datetime import datetime as _datetime, timedelta, UTC
+from typing import Any
 from uuid import NAMESPACE_DNS, UUID, uuid5, getnode
 
 import pyotp
@@ -7,40 +8,46 @@ import pyotp
 from pydentity.exc import ArgumentNoneException
 
 __all__ = (
-    'datetime',
-    'generate_totp_qrcode_uri',
-    'get_device_uuid',
-    'is_none_or_empty',
+    "datetime",
+    "generate_totp_qrcode_uri",
+    "get_device_uuid",
+    "is_none_or_empty",
+    "singleton",
+    "islist",
 )
+
+
+def islist(_object: Any):
+    return isinstance(_object, list)
 
 
 class datetime(_datetime):
     @classmethod
-    def utcnow(cls) -> 'datetime':
+    def utcnow(cls) -> "datetime":
         return datetime.now(UTC)
 
-    def add(self, _timedelta: timedelta, /) -> 'datetime':
+    def add(self, _timedelta: timedelta, /) -> "datetime":
         return self.__add__(_timedelta)
 
-    def add_days(self, days: float, /) -> 'datetime':
+    def add_days(self, days: float, /) -> "datetime":
         return self.add(timedelta(days=days))
 
-    def add_seconds(self, seconds: float, /) -> 'datetime':
+    def add_seconds(self, seconds: float, /) -> "datetime":
         return self.add(timedelta(seconds=seconds))
 
-    def add_microseconds(self, microseconds: float, /) -> 'datetime':
+    def add_microseconds(self, microseconds: float, /) -> "datetime":
         return self.add(timedelta(microseconds=microseconds))
 
-    def add_milliseconds(self, milliseconds: float, /) -> 'datetime':
+    def add_milliseconds(self, milliseconds: float, /) -> "datetime":
         return self.add(timedelta(milliseconds=milliseconds))
 
-    def add_minutes(self, minutes: float, /) -> 'datetime':
+    def add_minutes(self, minutes: float, /) -> "datetime":
         return self.add(timedelta(minutes=minutes))
 
-    def add_hours(self, hours: float, /) -> 'datetime':
+    def add_hours(self, hours: float, /) -> "datetime":
         return self.add(timedelta(hours=hours))
 
-    def add_weeks(self, weeks: float, /) -> 'datetime':
+    def add_weeks(self, weeks: float, /) -> "datetime":
         return self.add(timedelta(weeks=weeks))
 
 
@@ -54,13 +61,28 @@ def get_device_uuid() -> str:
 
 def generate_totp_qrcode_uri(secret: str, name: str, app_name: str, modifier: str | None = None) -> str:
     if not secret:
-        raise ArgumentNoneException('secret')
+        raise ArgumentNoneException("secret")
     if not name:
-        raise ArgumentNoneException('name')
+        raise ArgumentNoneException("name")
     if not app_name:
-        raise ArgumentNoneException('app_name')
+        raise ArgumentNoneException("app_name")
 
     b32secret = secret.encode() + modifier.encode() if modifier else secret.encode()
     return pyotp.TOTP(
         base64.b32encode(b32secret).decode()
     ).provisioning_uri(name=name, issuer_name=app_name)
+
+
+class _Singleton:
+    def __init__(self, cls):
+        self.__wrapped__ = cls
+        self._instance = None
+
+    def __call__(self, *args, **kwargs):
+        if self._instance is None:
+            self._instance = self.__wrapped__(*args, **kwargs)
+        return self._instance
+
+
+def singleton(cls):
+    return _Singleton(cls)

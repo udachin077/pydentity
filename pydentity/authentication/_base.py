@@ -3,19 +3,20 @@ import json
 import platform
 from collections.abc import Callable
 from inspect import isfunction
-from typing import overload, Optional, Any
+from typing import overload, Any
 
 from cryptography.fernet import Fernet
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 
 from pydentity.authentication.abc import (
+    IAuthenticationDataProtector,
     IAuthenticationHandler,
     IAuthenticationSchemeProvider,
-    IAuthenticationDataProtector
 )
 from pydentity.exc import ArgumentNoneException, InvalidOperationException
 from pydentity.security.claims import ClaimsPrincipal
+from pydentity.utils import singleton
 
 __all__ = (
     "AuthenticationError",
@@ -77,6 +78,7 @@ class AuthenticationSchemeBuilder:
         return AuthenticationScheme(self.name, self.handler)
 
 
+@singleton
 class AuthenticationOptions:
     __slots__ = (
         "_scheme_map",
@@ -88,7 +90,7 @@ class AuthenticationOptions:
     )
 
     def __init__(self) -> None:
-        self._scheme_map = {}
+        self._scheme_map: dict[str, AuthenticationScheme] = {}
         self.default_scheme: str = ""
         self.default_authentication_scheme: str = ""
         self.default_sign_in_scheme: str = ""
@@ -110,11 +112,11 @@ class AuthenticationOptions:
     ) -> None:
         if not name:
             raise ArgumentNoneException("name")
-        if not scheme_or_builder:
-            raise ArgumentNoneException("scheme_or_builder")
-
         if name in self._scheme_map:
             raise InvalidOperationException(f"Scheme already exists: {name}.")
+
+        if not scheme_or_builder:
+            raise ArgumentNoneException("scheme_or_builder")
 
         if isinstance(scheme_or_builder, AuthenticationScheme):
             self._scheme_map[name] = scheme_or_builder
@@ -125,39 +127,41 @@ class AuthenticationOptions:
             self._scheme_map[name] = builder.build()
 
         else:
-            raise NotImplemented
+            raise NotImplementedError
 
 
 class AuthenticationSchemeProvider(IAuthenticationSchemeProvider):
-    options: AuthenticationOptions
+    __slots__ = ("_auto_default_scheme", "options",)
 
     def __init__(self) -> None:
+        self.options: AuthenticationOptions = AuthenticationOptions()
         self._auto_default_scheme = None
+
         for scheme in getattr(self.options, "_scheme_map").values():
             self._auto_default_scheme = scheme
             break
 
-    async def get_scheme(self, name: str) -> Optional[AuthenticationScheme]:
+    async def get_scheme(self, name: str) -> AuthenticationScheme | None:
         if not name:
             raise ArgumentNoneException("name")
-        return getattr(self.options, "_scheme_map").get(name, None)
+        return getattr(self.options, "_scheme_map").get(name)
 
-    async def get_default_authentication_scheme(self) -> Optional[AuthenticationScheme]:
+    async def get_default_authentication_scheme(self) -> AuthenticationScheme | None:
         if name := self.options.default_authentication_scheme:
             return await self.get_scheme(name)
         return await self.get_default_scheme()
 
-    async def get_default_sign_in_scheme(self) -> Optional[AuthenticationScheme]:
+    async def get_default_sign_in_scheme(self) -> AuthenticationScheme | None:
         if name := self.options.default_sign_in_scheme:
             return await self.get_scheme(name)
         return await self.get_default_scheme()
 
-    async def get_default_sign_out_scheme(self) -> Optional[AuthenticationScheme]:
+    async def get_default_sign_out_scheme(self) -> AuthenticationScheme | None:
         if name := self.options.default_sign_out_scheme:
             return await self.get_scheme(name)
         return await self.get_default_sign_in_scheme()
 
-    async def get_default_scheme(self) -> Optional[AuthenticationScheme]:
+    async def get_default_scheme(self) -> AuthenticationScheme | None:
         if name := self.options.default_scheme:
             return await self.get_scheme(name)
         return self._auto_default_scheme
@@ -181,11 +185,11 @@ class DefaultAuthenticationDataProtector(IAuthenticationDataProtector):
         self.__fernet = Fernet(key)
 
     def protect(self, data: dict | None) -> str | None:
-        if data:
+        if data is not None:
             return self.__fernet.encrypt(json.dumps(data, separators=(",", ":")).encode()).decode()
         return data
 
     def unprotect(self, data: str | None) -> dict | None:
-        if data:
+        if data is not None:
             return json.loads(self.__fernet.decrypt(data))
         return data

@@ -20,7 +20,7 @@ from pydentity.abc import (
     IUserValidator,
 )
 from pydentity.abc.stores import IUserStore, IRoleStore
-from pydentity.contrib.fastapi.dependencies import (
+from pydentity.ext.fastapi.dependencies import (
     Dependencies,
     PasswordValidatorCollection,
     RoleValidatorCollection,
