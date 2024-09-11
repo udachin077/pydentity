@@ -1,140 +1,9 @@
-<h1 align="center">Pydentity</h1>
-
-[//]: # (## Install)
-
-[//]: # ()
-[//]: # (```)
-
-[//]: # (pip install fastapi-pydentity)
-
-[//]: # (```)
-
-## Base usage
+## class `IdentityOptions`
 
 ```python
-import uuid
-from typing import Annotated
+from pydentity import IdentityOptions
 
-from fastapi import FastAPI, Depends, Form, HTTPException
-from pydantic import EmailStr, SecretStr
-
-from pydentity import SignInManager, UserManager
-from pydentity.abc.stores import IRoleStore, IUserPasswordStore, IUserEmailStore, IUserSecurityStampStore
-from pydentity.contrib.fastapi import PydentityBuilder
-from pydentity.types import UserProtokol
-
-USERS_DB = {}
-
-
-class User(UserProtokol):
-    def __init__(self, email, username):
-        self.id = str(uuid.uuid4())
-        self.email = email
-        self.username = username
-
-
-class UserStore(IUserPasswordStore, IUserEmailStore, IUserSecurityStampStore):
-    ...
-
-
-class RoleStore(IRoleStore):
-    ...
-
-
-builder = PydentityBuilder()
-builder.add_default_identity(UserStore, RoleStore)
-builder.build()
-
-app = FastAPI()
-
-
-class RegisterInputModel:
-    def __init__(
-            self,
-            email: EmailStr = Form(alias="email", validation_alias="email"),
-            password: SecretStr = Form(alias="password", validation_alias="password"),
-            confirm_password: SecretStr = Form(alias="confirmPassword", validation_alias='confirmPassword')
-    ):
-        self.email = email
-        self.password = password
-        self.confirm_password = confirm_password
-
-
-class LoginInputModel:
-    def __init__(
-            self,
-            email: EmailStr = Form(alias="email", validation_alias="email"),
-            password: SecretStr = Form(alias="password", validation_alias="password"),
-            remember_me: bool = Form(alias="rememberMe", validation_alias="rememberMe")
-    ):
-        self.email = email
-        self.password = password
-        self.remember_me = remember_me
-
-
-@app.post("/register")
-async def register(
-        form: Annotated[RegisterInputModel, Depends()],
-        user_manager: Annotated[UserManager, Depends()],
-        signin_manager: Annotated[SignInManager, Depends()],
-):
-    if form.password.get_secret_value() != form.confirm_password.get_secret_value():
-        raise HTTPException(status_code=400, detail=["Passwords don't match."])
-
-    user = User(email=form.email, username=form.email)
-    result = await user_manager.create(user, form.password.get_secret_value())
-
-    if result.succeeded:
-        await signin_manager.sign_in(user, is_persistent=False)
-    else:
-        raise HTTPException(status_code=400, detail=[err.description for err in result.errors])
-
-
-@app.post("/login")
-async def login(
-        form: Annotated[LoginInputModel, Depends()],
-        signin_manager: Annotated[SignInManager, Depends()],
-):
-    result = await signin_manager.password_sign_in(
-        form.email,
-        form.password.get_secret_value(),
-        form.remember_me
-    )
-
-    if result.succeeded:
-        user = await signin_manager.user_manager.find_by_email(form.email)
-        return {"username": user.email}
-
-    if result.requires_two_factor:
-        return {"requiresTwoFactor": True}
-
-    if result.is_locked_out:
-        raise HTTPException(status_code=401, detail="Invalid login attempt.")
-
-    raise HTTPException(status_code=401, detail="Invalid login attempt.")
-
-
-@app.post("/logout")
-async def logout(signin_manager: Annotated[SignInManager, Depends()]):
-    await signin_manager.sign_out()
-
-
-if __name__ == "__main__":
-    import uvicorn
-
-    uvicorn.run("__main__:app")
-```
-
-## Configure `IdentityOptions`
-
-```python
-def configure_options(options: IdentityOptions):
-    options.signin.required_confirmed_account = False
-    options.password.required_digit = False
-
-
-builder = PydentityBuilder()
-builder.add_default_identity(UserStore, RoleStore).configure_options(configure_options)
+options = IdentityOptions()
 ```
 
 | Attribute         | Type                    | 
@@ -146,7 +15,7 @@ builder.add_default_identity(UserStore, RoleStore).configure_options(configure_o
 | `tokens`          | `TokenOptions`          | 
 | `user`            | `UserOptions`           | 
 
-### `LockoutOptions`
+### class `LockoutOptions`
 
 Options for configuring user lockout.
 
@@ -156,7 +25,7 @@ Options for configuring user lockout.
 | `default_lockout_timespan`   | `timedelta` | Gets or sets the `timedelta` a user is locked out for when a lockout occurs.                                         | `timedelta(minutes=5)` |
 | `max_failed_access_attempts` | `int`       | Gets or sets the number of failed access attempts allowed before a user is locked out, assuming lock out is enabled. | `5`                    |                                                                                        |             |
 
-### `ClaimsIdentityOptions`
+### class `ClaimsIdentityOptions`
 
 Options used to configure the claim types used for well known claims.
 
@@ -168,7 +37,7 @@ Options used to configure the claim types used for well known claims.
 | `email_claim_type`          | `str` | Gets or sets the `claim_types` used for the user email claim.      | `ClaimTypes.Email`          |
 | `security_stamp_claim_type` | `str` | Gets or sets the `claim_types` for the security stamp claim.       | `ClaimTypes.SecurityStamp`  |
 
-### `PasswordOptions`
+### class `PasswordOptions`
 
 Specifies options for password requirements.
 
@@ -181,7 +50,7 @@ Specifies options for password requirements.
 | `required_uppercase`        | `bool` | Gets or sets a flag indicating if passwords must contain a upper case ASCII character. | `True`  |
 | `required_non_alphanumeric` | `bool` | Gets or sets a flag indicating if passwords must contain a non-alphanumeric character. | `True`  |
 
-### `SignInOptions`
+### class `SignInOptions`
 
 Options for configuring sign-in.
 
@@ -191,7 +60,7 @@ Options for configuring sign-in.
 | `required_confirmed_phone_number` | `bool` | Gets or sets a flag indicating whether a confirmed telephone number is required to sign in.                  | `False` |
 | `required_confirmed_account`      | `bool` | Gets or sets a flag indicating whether a confirmed `IUserConfirmation[TUser]` account is required to sign in | `True`  |
 
-### `TokenOptions`
+### class `TokenOptions`
 
 Options for user tokens.
 
@@ -202,17 +71,18 @@ Options for user tokens.
 | `DEFAULT_PHONE_PROVIDER`          | `str` | `Phone`         |
 | `DEFAULT_AUTHENTICATION_PROVIDER` | `str` | `Authenticator` |
 
-| Attribute                                  | Type  | Description                                                                                        | Default                           |
-|--------------------------------------------|-------|----------------------------------------------------------------------------------------------------|-----------------------------------|
-| `authenticator_token_provider`             | `str` | Gets or sets the token provider used to validate two factor sign ins with an authenticator.        | `DEFAULT_AUTHENTICATION_PROVIDER` |
-| `change_email_token_provider`              | `str` | Gets or sets the token provider used to generate tokens used in email change confirmation emails.  | `DEFAULT_EMAIL_PROVIDER`          |
-| `change_phone_number_token_provider`       | `str` | Gets or sets the token provider used to generate tokens used when changing phone numbers.          | `DEFAULT_PHONE_PROVIDER`          |
-| `email_confirmation_token_provider`        | `str` | Gets or sets the token provider used to generate tokens used in account confirmation emails.       | `DEFAULT_EMAIL_PROVIDER`          |
-| `phone_number_confirmation_token_provider` | `str` | Gets or sets the token provider used to generate tokens used in account confirmation phone number. | `DEFAULT_PHONE_PROVIDER`          |
-| `password_reset_token_provider`            | `str` | Gets or sets the token provider used to generate tokens used in password reset emails.             | `DEFAULT_PROVIDER`                |
-| `totp_interval`                            | `int` | Gets or sets the totp interval in seconds.                                                         | `180`                             |
+| Attribute                                  | Type                                            | Description                                                                                        | Default                           |
+|--------------------------------------------|-------------------------------------------------|----------------------------------------------------------------------------------------------------|-----------------------------------|
+| `authenticator_token_provider`             | `str`                                           | Gets or sets the token provider used to validate two factor sign ins with an authenticator.        | `DEFAULT_AUTHENTICATION_PROVIDER` |
+| `change_email_token_provider`              | `str`                                           | Gets or sets the token provider used to generate tokens used in email change confirmation emails.  | `DEFAULT_EMAIL_PROVIDER`          |
+| `change_phone_number_token_provider`       | `str`                                           | Gets or sets the token provider used to generate tokens used when changing phone numbers.          | `DEFAULT_PHONE_PROVIDER`          |
+| `email_confirmation_token_provider`        | `str`                                           | Gets or sets the token provider used to generate tokens used in account confirmation emails.       | `DEFAULT_EMAIL_PROVIDER`          |
+| `phone_number_confirmation_token_provider` | `str`                                           | Gets or sets the token provider used to generate tokens used in account confirmation phone number. | `DEFAULT_PHONE_PROVIDER`          |
+| `password_reset_token_provider`            | `str`                                           | Gets or sets the token provider used to generate tokens used in password reset emails.             | `DEFAULT_PROVIDER`                |
+| `totp_interval`                            | `int`                                           | Gets or sets the totp interval in seconds.                                                         | `180`                             |
+| `provider_map`                             | `dict[str, IUserTwoFactorTokenProvider[TUser]]` |                                                                                                    | `{}`                              |
 
-### `UserOptions`
+### class `UserOptions`
 
 Options for user validation.
 
@@ -224,169 +94,126 @@ Options for user validation.
 
 ## Validators
 
-You can add your own validators using `add_user_validator`, `add_password_validator` and `add_role_validator`.
+```python
+from pydentity import UserValidator, PasswordValidator, RoleValidator, UserManager, RoleManager
+
+user_manager = UserManager(
+    ...,
+    user_validators=[UserValidator()],
+    password_validators=[PasswordValidator()],
+)
+role_manager = RoleManager(
+    ...,
+    role_validators=[RoleValidator()],
+)
+```
+
+| Validator           | Type                        |
+|---------------------|-----------------------------|
+| `UserValidator`     | `IUserValidator[TUser]`     | 
+| `PasswordValidator` | `IPasswordValidator[TUser]` | 
+| `RoleValidator`     | `IRoleValidator[TRole]`     | 
+
+### Custom validators
 
 ```python
-from pydentity.abc import IUserValidator
+from pydentity import IdentityResult, UserManager, RoleManager
+from pydentity.abc import IUserValidator, IPasswordValidator, IRoleValidator
+from pydentity.types import TUser, TRole
 
 
 class CustomUserValidator(IUserValidator):
-    async def validate(self, manager, user) -> IdentityResult:
-        pass
-```
-
-`add_identity` does not add validators by default.
-
-```python
-builder = PydentityBuilder()
-builder.add_identity(UserStore, RoleStore).add_user_validator(CustomUserValidator)
-# [CustomUserValidator]
-```
-
-`add_default_identity` adds standard validators.
-
-```python
-builder = PydentityBuilder()
-builder.add_default_identity(UserStore, RoleStore).add_user_validator(CustomUserValidator)
-# [UserValidator, CustomUserValidator]
-```
-
-## Authentication
-
-### Cookie authentication
-
-```python
-
-from typing import Annotated
-
-from fastapi import FastAPI, Depends, APIRouter
-
-from pydentity import SignInManager
-from pydentity.contrib.fastapi import PydentityBuilder, use_authentication, use_authorization
-from pydentity.contrib.fastapi.authorization import authorize
-
-builder = PydentityBuilder()
-builder.add_default_identity(UserStore, RoleStore)
-builder.add_authorization()
-builder.build()
-
-app = FastAPI()
-use_authentication(app)
-use_authorization(app)
+    async def validate(self, manager: UserManager, user: TUser) -> IdentityResult:
+        ...
 
 
-@app.post("/logout", dependencies=[authorize()])
-async def logout(signin_manager: Annotated[SignInManager, Depends()]):
-    await signin_manager.sign_out()
+class CustomPasswordValidator(IPasswordValidator):
+    async def validate(self, manager: UserManager, password: str) -> IdentityResult:
+        ...
 
 
-protected_router = APIRouter(prefix="/protect", dependencies=[authorize()])
+class CustomRoleValidator(IRoleValidator):
+    async def validate(self, manager: RoleManager, role: TRole) -> IdentityResult:
+        ...
 
 
-@protected_router.get("/roles")
-async def get_roles():
-    ...
-
-
-app.include_router(protected_router)
-```
-
-### JWT Bearer authentication
-```python
-from pydentity.authentication.bearer import TokenValidationParameters, JWTSecurityToken
-
-builder = PydentityBuilder()
-builder.add_authentication().add_jwt_bearer(
-    validation_parameters=TokenValidationParameters(
-        issuer_signing_key="<SECRETKEY>",
-        valid_algorithms=["HS256"],
-        valid_issuers=["pydentity"],
-        valid_audiences=["pydentity"],
-    )
+user_manager = UserManager(
+    ...,
+    user_validators=[CustomUserValidator()],
+    password_validators=[CustomPasswordValidator()],
 )
-
-
-@app.post("/login")
-async def login(
-        form: Annotated[LoginInputModel, Depends()],
-        signin_manager: Annotated[SignInManager, Depends()],
-):
-    result = await signin_manager.password_sign_in(
-        form.email,
-        form.password.get_secret_value(),
-        form.remember_me
-    )
-
-    if result.succeeded:
-        user = await signin_manager.user_manager.find_by_email(form.email)
-        principal = await signin_manager.create_user_principal(user)
-        token = JWTSecurityToken(
-            signin_key="<SECRETKEY>",
-            claims=principal.claims
-        )
-        return {"access_token": token.encode()}
-
-    if result.requires_two_factor:
-        return {"requiresTwoFactor": True}
-
-    if result.is_locked_out:
-        raise HTTPException(status_code=401, detail="Invalid login attempt.")
-
-    raise HTTPException(status_code=401, detail="Invalid login attempt.")
-```
-## Authorization
-
-### Add `AuthorizationPolicy`
-
-```python
-builder = PydentityBuilder()
-
-# Build AgePolicy
-AgePolicyBuilder = AuthorizationPolicyBuilder()
-AgePolicyBuilder.require_claim("age", 23)
-AgePolicy = AgePolicyBuilder.build()
-
-# Build CityAndRolePolicy
-CityAndRolePolicyBuilder = AuthorizationPolicyBuilder()
-CityAndRolePolicyBuilder.require_claim("city", "London")
-CityAndRolePolicyBuilder.require_role("admin")
-CityAndRolePolicy = CityAndRolePolicyBuilder.build()
-
-builder.add_authorization().add_policy("AgePolicy", AgePolicy).add_policy("CityAndRolePolicy", CityAndRolePolicy)
-builder.build()
+role_manager = RoleManager(
+    ...,
+    role_validators=[CustomRoleValidator()],
+)
 ```
 
-### Use `authorize`
+## Password hashers
 
-The `authorize` dependency is used for authorization.
+Password hasher uses `pwdlib`.
 
 ```python
-@app.post("/logout", dependencies=[authorize()])
-async def logout(signin_manager: Annotated[SignInManager, Depends()]):
-    await signin_manager.sign_out()
+from pydentity import Argon2PasswordHasher, UserManager
+
+user_manager = UserManager(
+    ...,
+    password_hasher=Argon2PasswordHasher()
+)
 ```
 
-It can be applied to individual routes as well as to routers in general.
+| Hasher                 | Default hasher |  
+|------------------------|----------------|
+| `PasswordHasher`       | None           |     
+| `BcryptPasswordHasher` | BcryptHasher   | 
+| `Argon2PasswordHasher` | Argon2Hasher   |
+
+### Custom password hasher
 
 ```python
-router = APIRouter(prefix="/secure", dependencies=[authorize("admin")])
+from pydentity import UserManager
+from pydentity.abc import IPasswordHasher, PasswordVerificationResult
+from pydentity.types import TUser
+
+
+class CustomPasswordHasher(IPasswordHasher):
+    def hash_password(self, user: TUser, password: str) -> str:
+        ...
+
+    def verify_hashed_password(self, user: TUser, hashed_password: str, password: str) -> PasswordVerificationResult:
+        ...
+
+
+user_manager = UserManager(
+    ...,
+    password_hasher=CustomPasswordHasher()
+)
 ```
 
-`authorize` can take the name of a role, roles separated by commas, or a collection of roles and the name of a policy.
+## Token providers
+
+Tokens are used to verify mail, phone, and two-factor authentication.
+
+`TotpSecurityStampBasedTokenProvider` uses `pyotp`.
+
+| Provider                              | Type                                         |
+|---------------------------------------|----------------------------------------------|
+| `TotpSecurityStampBasedTokenProvider` | `IUserTwoFactorTokenProvider[TUser]`         |
+| `EmailTokenProvider`                  | `TotpSecurityStampBasedTokenProvider[TUser]` |
+| `PhoneNumberTokenProvider`            | `TotpSecurityStampBasedTokenProvider[TUser]` |
+| `AuthenticatorTokenProvider`          | `IUserTwoFactorTokenProvider[TUser]`         |
+| `DataProtectorTokenProvider`          | `IUserTwoFactorTokenProvider[TUser]`         |
 
 ```python
-authorize("role1")
-authorize("role1,role2")
-authorize(("role1", "role2",))
-authorize(policy="AgePolicy")
-authorize("role1", policy="AgePolicy")
-authorize("role1,role2", policy="AgePolicy")
-authorize({"role1", "role2"}, policy="AgePolicy")
+from pydentity import IdentityOptions, EmailTokenProvider, AuthenticatorTokenProvider, DataProtectorTokenProvider
+
+options = IdentityOptions()
+options.tokens.provider_map[options.tokens.email_confirmation_token_provider] = EmailTokenProvider()
+options.tokens.provider_map[options.tokens.change_email_token_provider] = EmailTokenProvider()
+options.tokens.provider_map[options.tokens.authenticator_token_provider] = AuthenticatorTokenProvider()
+options.tokens.provider_map["MyTokenProvider"] = DataProtectorTokenProvider()
 ```
 
 ## Logging
-
-### Standard logger
 
 Current pydentity has three loggers: `pydentity.user_manager`, `pydentity.role_manager` and `pydentity.signin_manager`.
 
@@ -417,11 +244,9 @@ sign_in_manager_logger.addHandler(sh)
 
 ### Custom logger
 
-Use `add_user_manager_logger`, `add_role_manager_logger` and `add_signin_manager_logger`.
-
 ```python
 from pydentity.abc import ILogger
-from pydentity.contrib.fastapi import PydentityBuilder
+from pydentity import UserManager
 
 
 class UserManagerLogger(ILogger):
@@ -438,6 +263,6 @@ class UserManagerLogger(ILogger):
         pass
 
 
-builder = PydentityBuilder()
-builder.add_default_identity(UserStore, RoleStore).add_user_manager_logger(UserManagerLogger())
+user_manager = UserManager(..., logger=UserManagerLogger())
 ```
+
