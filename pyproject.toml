@@ -1,6 +1,6 @@
 [tool.poetry]
-name = "pydentity"
-version = "0.2.0"
+name = "pydentity-core"
+version = "0.1.0"
 description = ""
 authors = ["Udachin Ivan <pypi.udachin@yandex.ru>"]
 license = "MIT"
@@ -13,13 +13,13 @@ exclude = [
 
 [tool.poetry.dependencies]
 python = "^3.12"
-email-validator = "2.2.0"
-itsdangerous = "2.2.0"
-cryptography = "43.0.0"
-pyotp = "2.9.0"
-pwdlib = { version = "0.2.0", extras = ["argon2", "bcrypt"] }
-pydentity-db-sqlalchemy = { git = "https://github.com/udachin077/pydentity-db-sqlalchemy.git", optional = true }
-pydentity-db-tortoise = { git = "https://github.com/udachin077/pydentity-db-tortoise.git", optional = true }
+email-validator = "^2.2.0"
+itsdangerous = "^2.2.0"
+cryptography = "43.0.*"
+pyotp = "^2.9.0"
+pwdlib = { version = "0.2.*", extras = ["argon2", "bcrypt"] }
+pydentity-db-sqlalchemy = { version = "0.1.*", optional = true }
+pydentity-db-tortoise = { version = "0.1.*", optional = true }
 
 [tool.poetry.dev-dependencies]
 pytest = "*"

@@ -1,3 +1,8 @@
+<h1 align="center">Pydentity</h1>
+
+    pip install pydentity-core
+
+
 ## class `IdentityOptions`
 
 ```python
