@@ -10,7 +10,7 @@ from cryptography.hazmat.primitives.asymmetric.ed448 import Ed448PrivateKey
 from cryptography.hazmat.primitives.asymmetric.rsa import RSAPrivateKey
 from jwt.exceptions import PyJWTError, InvalidKeyError, ExpiredSignatureError
 
-from pydentity.authentication._base import AuthenticationResult
+from pydentity.authentication import AuthenticationResult
 from pydentity.authentication.abc import IAuthenticationHandler
 from pydentity.http.context import HttpContext
 from pydentity.security.claims import ClaimsPrincipal, ClaimsIdentity, Claim

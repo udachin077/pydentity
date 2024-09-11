@@ -4,5 +4,6 @@ from pydentity.authentication._base import (
     AuthenticationResult as AuthenticationResult,
     AuthenticationScheme as AuthenticationScheme,
     AuthenticationSchemeBuilder as AuthenticationSchemeBuilder,
-    AuthenticationSchemeProvider as AuthenticationSchemeProvider
+    AuthenticationSchemeProvider as AuthenticationSchemeProvider,
+    DefaultAuthenticationDataProtector as DefaultAuthenticationDataProtector,
 )

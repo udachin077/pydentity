@@ -2,13 +2,13 @@ from collections.abc import Iterable
 
 from pydentity.identity_error import IdentityError
 
-__all__ = ('IdentityResult',)
+__all__ = ("IdentityResult",)
 
 
 class IdentityResult:
-    """Represents the result of an identity operation."""
+    """Represents the result of an builders operation."""
 
-    __slots__ = ('_errors', '_succeeded',)
+    __slots__ = ("_errors", "_succeeded",)
 
     def __init__(self, succeeded: bool, *errors: IdentityError) -> None:
         self._errors = errors or ()
@@ -22,24 +22,24 @@ class IdentityResult:
     @property
     def errors(self) -> Iterable[IdentityError]:
         """An ``Iterable`` of ``IdentityError`` instances containing errors that occurred during
-        the identity operation."""
+        the builders operation."""
         return self._errors
 
     @staticmethod
-    def failed(*errors: IdentityError) -> 'IdentityResult':
-        """Creates an ``IdentityResult`` indicating a failed identity operation,
+    def failed(*errors: IdentityError) -> "IdentityResult":
+        """Creates an ``IdentityResult`` indicating a failed builders operation,
         with a list of errors if applicable."""
         return IdentityResult(False, *errors)
 
     @staticmethod
-    def success() -> 'IdentityResult':
-        """Returns an ``IdentityResult`` indicating a successful identity operation."""
+    def success() -> "IdentityResult":
+        """Returns an ``IdentityResult`` indicating a successful builders operation."""
         return IdentityResult(True)
 
     def __str__(self) -> str:
         if self.succeeded:
-            return 'Succeeded.'
-        return f'Failed: {",".join(e.code for e in self.errors)}.'
+            return "Succeeded."
+        return f"Failed: {",".join(e.code for e in self.errors)}."
 
     def __repr__(self):
-        return f'<{self.__class__.__name__}: {"Succeeded" if self.succeeded else "Failed"}>'
+        return f"<{self.__class__.__name__}: {"Succeeded" if self.succeeded else "Failed"}>"

@@ -133,7 +133,7 @@ class SignInManager(Generic[TUser]):
 
     async def is_signed_in(self, principal: ClaimsPrincipal) -> bool:
         """
-        Returns true if the principal has an identity with the application cookie identity.
+        Returns true if the principal has an builders with the application cookie builders.
 
         :param principal: The ``ClaimsPrincipal`` instance.
         :return:

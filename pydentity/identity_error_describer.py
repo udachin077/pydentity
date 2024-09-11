@@ -1,12 +1,12 @@
 from pydentity.identity_error import IdentityError
 from pydentity.resources import Resources
 
-__all__ = ('IdentityErrorDescriber',)
+__all__ = ("IdentityErrorDescriber",)
 
 
 # noinspection PyPep8Naming
 class IdentityErrorDescriber:
-    """Service to enable localization for application facing identity errors."""
+    """Service to enable localization for application facing builders errors."""
 
     __slots__ = ()
 

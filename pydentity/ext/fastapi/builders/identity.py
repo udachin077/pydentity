@@ -1,4 +1,4 @@
-from collections.abc import Callable
+from collections.abc import Callable, Iterable
 
 from pydentity import (
     AuthenticatorTokenProvider,
@@ -20,22 +20,17 @@ from pydentity.abc import (
     IUserValidator,
 )
 from pydentity.abc.stores import IUserStore, IRoleStore
-from pydentity.ext.fastapi.dependencies import (
-    Dependencies,
-    PasswordValidatorCollection,
-    RoleValidatorCollection,
-    UserValidatorCollection,
-)
+from pydentity.ext.fastapi.infrastructure import DependenciesContainer
 from pydentity.identity_options import TokenOptions, IdentityOptions
 from pydentity.types import TUser, TRole
 
 
 class IdentityBuilder:
-    def __init__(self, dependencies: Dependencies) -> None:
+    def __init__(self, dependencies: DependenciesContainer) -> None:
         self._dependencies = dependencies
 
     def add_user_validator(self, validator: type[IUserValidator[TUser]]) -> "IdentityBuilder":
-        UserValidatorCollection.validators.update((validator,))
+        self._dependencies[Iterable[IUserValidator[TUser]]].add(validator)
         return self
 
     def add_user_claims_principal_factory(self, factory: type[IUserClaimsPrincipalFactory[TUser]]) -> "IdentityBuilder":
@@ -47,7 +42,7 @@ class IdentityBuilder:
         return self
 
     def add_password_validator(self, validator: type[IPasswordValidator[TUser]]) -> "IdentityBuilder":
-        PasswordValidatorCollection.validators.update((validator,))
+        self._dependencies[Iterable[IPasswordValidator[TUser]]].add(validator)
         return self
 
     def add_user_store(self, store: type[IUserStore[TUser]]) -> "IdentityBuilder":
@@ -59,7 +54,7 @@ class IdentityBuilder:
         return self
 
     def add_role_validator(self, validator: type[IRoleValidator[TRole]]) -> "IdentityBuilder":
-        RoleValidatorCollection.validators.update((validator,))
+        self._dependencies[Iterable[IRoleValidator[TRole]]].add(validator)
         return self
 
     def add_role_store(self, store: type[IRoleStore[TRole]]) -> "IdentityBuilder":
@@ -75,7 +70,7 @@ class IdentityBuilder:
         return self
 
     def add_token_provider(self, provider_name: str, provider: IUserTwoFactorTokenProvider[TUser]) -> "IdentityBuilder":
-        options = self._dependencies[IdentityOptions]()  # call instance
+        options = self._dependencies[IdentityOptions]()
         options.tokens.provider_map[provider_name] = provider
         return self
 
@@ -103,6 +98,5 @@ class IdentityBuilder:
         return self
 
     def configure_options(self, configure: Callable[[IdentityOptions], None]) -> "IdentityBuilder":
-        options = self._dependencies[IdentityOptions]()  # call instance
-        configure(options)
+        configure(self._dependencies[IdentityOptions]())
         return self

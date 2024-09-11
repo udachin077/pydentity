@@ -4,7 +4,7 @@ from datetime import timedelta
 from functools import lru_cache
 from typing import Literal, Any
 
-from pydentity.authentication._base import AuthenticationResult, DefaultAuthenticationDataProtector
+from pydentity.authentication import AuthenticationResult, DefaultAuthenticationDataProtector
 from pydentity.authentication.abc import IAuthenticationHandler, IAuthenticationDataProtector
 from pydentity.http.context import HttpContext
 from pydentity.security.claims import ClaimsPrincipal

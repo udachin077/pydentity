@@ -179,7 +179,7 @@ class UserOptions:
 
 
 class IdentityOptions:
-    """Represents all the options you can use to configure the identity system."""
+    """Represents all the options you can use to configure the builders system."""
 
     __slots__ = (
         'claims_identity',
@@ -192,14 +192,14 @@ class IdentityOptions:
 
     def __init__(self) -> None:
         self.claims_identity: ClaimsIdentityOptions = ClaimsIdentityOptions()
-        """Gets or sets the ``ClaimsIdentityOptions`` for the identity system."""
+        """Gets or sets the ``ClaimsIdentityOptions`` for the builders system."""
         self.lockout: LockoutOptions = LockoutOptions()
-        """Gets or sets the ``LockoutOptions`` for the identity system."""
+        """Gets or sets the ``LockoutOptions`` for the builders system."""
         self.password: PasswordOptions = PasswordOptions()
-        """Gets or sets the ``PasswordOptions`` for the identity system."""
+        """Gets or sets the ``PasswordOptions`` for the builders system."""
         self.signin: SignInOptions = SignInOptions()
-        """Gets or sets the ``SignInOptions`` for the identity system."""
+        """Gets or sets the ``SignInOptions`` for the builders system."""
         self.tokens: TokenOptions = TokenOptions()
-        """Gets or sets the ``TokenOptions`` for the identity system."""
+        """Gets or sets the ``TokenOptions`` for the builders system."""
         self.user: UserOptions = UserOptions()
-        """Gets or sets the ``UserOptions`` for the identity system."""
+        """Gets or sets the ``UserOptions`` for the builders system."""

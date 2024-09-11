@@ -1,56 +1,28 @@
-from collections.abc import Callable, Iterable
-from typing import overload, Annotated
+from collections.abc import Iterable
+from typing import Annotated
 
-from fastapi import Depends
-from starlette.requests import Request
+from fastapi import Depends, FastAPI
+from starlette.responses import PlainTextResponse
+from starlette.types import ExceptionHandler
 
 from pydentity.authorization import (
     AuthorizationError,
     AuthorizationHandlerContext,
-    AuthorizationOptions,
-    AuthorizationPolicy,
-    AuthorizationPolicyBuilder,
     AuthorizationPolicyProvider,
 )
 from pydentity.authorization.abc import IAuthorizationPolicyProvider
 from pydentity.exc import InvalidOperationException
-
-__all__ = (
-    "AuthorizationBuilder",
-    "authorize",
-)
+from pydentity.ext.fastapi.dependencies import FastAPIAuthorizationHandlerContext
 
 
-class FastAPIAuthorizationHandlerContext(AuthorizationHandlerContext):
-    def __init__(self, request: Request):
-        super().__init__(request)
-
-
-class AuthorizationBuilder:
-    __slots__ = ("_options",)
-
-    def __init__(self, options: AuthorizationOptions):
-        self._options = options
-
-    @overload
-    def add_policy(self, name: str, policy: AuthorizationPolicy) -> "AuthorizationBuilder":
-        pass
-
-    @overload
-    def add_policy(
-            self,
-            name: str,
-            configure_policy: Callable[[AuthorizationPolicyBuilder], None]
-    ) -> "AuthorizationBuilder":
-        pass
-
-    def add_policy(
-            self,
-            name: str,
-            policy_or_builder: AuthorizationPolicy | Callable[[AuthorizationPolicyBuilder], None]
-    ) -> "AuthorizationBuilder":
-        self._options.add_policy(name, policy_or_builder)
-        return self
+def use_authorization(app: FastAPI, on_error: ExceptionHandler | None = None):
+    if on_error:
+        app.add_exception_handler(AuthorizationError, on_error)
+    else:
+        app.add_exception_handler(
+            AuthorizationError,
+            lambda req, exc: PlainTextResponse('Forbidden', status_code=403)
+        )
 
 
 def authorize(roles: str | Iterable[str] | None = None, *, policy: str | None = None):
@@ -92,16 +64,14 @@ async def _check_policy(
         for req in default_policy.requirements:
             await req.handle(context)
 
-    _policy = None
-
     if policy:
         _policy = provider.get_policy(policy)
 
-    if not _policy:
-        raise InvalidOperationException(f"The AuthorizationPolicy named: '{policy}' was not found.")
+        if not _policy:
+            raise InvalidOperationException(f"The AuthorizationPolicy named: '{policy}' was not found.")
 
-    for req in _policy.requirements:
-        await req.handle(context)
+        for req in _policy.requirements:
+            await req.handle(context)
 
-    if not context.has_succeeded:
-        raise AuthorizationError()
+        if not context.has_succeeded:
+            raise AuthorizationError()

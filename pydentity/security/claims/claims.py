@@ -419,7 +419,7 @@ class ClaimsPrincipal:
 
     def is_in_role(self, role: str) -> bool:
         """
-        ``is_in_role`` answers the question: does an identity this principal possesses
+        ``is_in_role`` answers the question: does an builders this principal possesses
         contains a claim of type ``role_claim_type`` where the value is '==' to the role.
 
         :param role: The role to check for.
@@ -432,7 +432,7 @@ class ClaimsPrincipal:
 
     def is_in_roles(self, *roles: str, mode: Literal['all', 'any'] = 'all') -> bool:
         """
-        ``is_in_role`` answers the question: does an identity this principal possesses
+        ``is_in_role`` answers the question: does an builders this principal possesses
         contains a claim of type ``role_claim_type`` where the value is '==' to the roles.
 
         :param roles: The roles to check for.

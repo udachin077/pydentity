@@ -2,13 +2,12 @@ import inspect
 from collections.abc import Iterable, Callable
 from typing import get_origin, Annotated, get_args, Union, Generic
 
-from fastapi import Depends, FastAPI
-from starlette.responses import PlainTextResponse
-from starlette.types import ExceptionHandler
+from fastapi import Depends
 
 from pydentity import (
     Argon2PasswordHasher,
     DefaultUserConfirmation,
+    IdentityConstants,
     IdentityErrorDescriber,
     IdentityOptions,
     PasswordValidator,
@@ -18,7 +17,7 @@ from pydentity import (
     UpperLookupNormalizer,
     UserClaimsPrincipalFactory,
     UserManager,
-    UserValidator, IdentityConstants,
+    UserValidator,
 )
 from pydentity.abc import (
     ILogger,
@@ -31,47 +30,60 @@ from pydentity.abc import (
     IUserValidator,
 )
 from pydentity.abc.stores import IUserStore, IRoleStore
-from pydentity.authentication import AuthenticationOptions, AuthenticationSchemeProvider, AuthenticationError
+from pydentity.authentication import AuthenticationOptions, AuthenticationSchemeProvider
 from pydentity.authentication.abc import IAuthenticationSchemeProvider
-from pydentity.authorization import AuthorizationOptions, AuthorizationPolicyProvider, AuthorizationError
-from pydentity.contrib.fastapi.authentication import AuthenticationBuilder, AuthenticationMiddleware
-from pydentity.contrib.fastapi.authorization import AuthorizationBuilder
-from pydentity.contrib.fastapi.dependencies import (
-    Dependencies,
+from pydentity.authorization import (
+    AuthorizationOptions,
+    AuthorizationPolicy,
+)
+from pydentity.ext.fastapi.builders import (
+    AuthenticationBuilder,
+    AuthorizationBuilder,
+    IdentityBuilder,
+)
+from pydentity.ext.fastapi.dependencies import HttpContext as FastAPIHttpContext, HttpContextAccessor
+from pydentity.ext.fastapi.dependencies import (
     PasswordValidatorCollection,
     RoleValidatorCollection,
-    singleton,
     UserValidatorCollection,
 )
-from pydentity.contrib.fastapi.dependencies.http import HttpContext as FastAPIHttpContext, HttpContextAccessor
-from pydentity.contrib.fastapi.identity.builder import IdentityBuilder
+from pydentity.ext.fastapi.infrastructure import DependenciesContainer
 from pydentity.http.context import HttpContext, IHttpContextAccessor
 from pydentity.types import TUser, TRole
+from pydentity.utils import singleton
 
 
 class PydentityBuilder:
     def __init__(self):
-        self._dependencies = Dependencies()
+        self._dependencies = DependenciesContainer()
 
     @property
-    def dependencies(self) -> Dependencies:
+    def dependencies(self) -> DependenciesContainer:
         return self._dependencies
 
-    def add_authentication(self) -> AuthenticationBuilder:
+    def add_authentication(self, default_scheme: str | None = None) -> AuthenticationBuilder:
         self._dependencies.update({
             IAuthenticationSchemeProvider: AuthenticationSchemeProvider,
             HttpContext: FastAPIHttpContext,
             IHttpContextAccessor: HttpContextAccessor,
         })
+
         options = AuthenticationOptions()
         options.default_authentication_scheme = IdentityConstants.ApplicationScheme
         options.default_sign_in_scheme = IdentityConstants.ExternalScheme
-        AuthenticationSchemeProvider.options = options
+
+        if default_scheme:
+            options.default_scheme = default_scheme
+            options.default_authentication_scheme = ""
+
         return AuthenticationBuilder(options)
 
-    def add_authorization(self) -> AuthorizationBuilder:
+    def add_authorization(self, default_policy: AuthorizationPolicy | None = None) -> AuthorizationBuilder:
         options = AuthorizationOptions()
-        AuthorizationPolicyProvider.options = options
+
+        if default_policy:
+            options.default_policy = default_policy
+
         return AuthorizationBuilder(options)
 
     def add_identity(
@@ -90,9 +102,9 @@ class PydentityBuilder:
             IRoleStore[TRole]: role_store,
             IdentityErrorDescriber: IdentityErrorDescriber,
             IPasswordHasher[TUser]: Argon2PasswordHasher,
-            Iterable[IPasswordValidator[TUser]]: PasswordValidatorCollection,
-            Iterable[IUserValidator[TUser]]: UserValidatorCollection,
-            Iterable[IRoleValidator[TRole]]: RoleValidatorCollection,
+            Iterable[IPasswordValidator[TUser]]: PasswordValidatorCollection(),
+            Iterable[IUserValidator[TUser]]: UserValidatorCollection(),
+            Iterable[IRoleValidator[TRole]]: RoleValidatorCollection(),
             ILookupNormalizer: UpperLookupNormalizer,
             UserManager[TUser]: UserManager,
             RoleManager[TRole]: RoleManager,
@@ -113,9 +125,9 @@ class PydentityBuilder:
     ) -> IdentityBuilder:
         builder = self.add_identity(user_store, role_store)
         builder.add_default_token_providers()
-        PasswordValidatorCollection.validators.update((PasswordValidator,))
-        UserValidatorCollection.validators.update((UserValidator,))
-        RoleValidatorCollection.validators.update((RoleValidator,))
+        self._dependencies[Iterable[IPasswordValidator[TUser]]].add(PasswordValidator)
+        self._dependencies[Iterable[IUserValidator[TUser]]].add(UserValidator)
+        self._dependencies[Iterable[IRoleValidator[TRole]]].add(RoleValidator)
         return builder
 
     def build(self):
@@ -150,25 +162,3 @@ class PydentityBuilder:
                         parameters.append(parameter)
 
             cls.__signature__ = signature.replace(parameters=parameters)
-
-
-def use_authentication(app: FastAPI, on_error: ExceptionHandler | None = None):
-    app.add_middleware(AuthenticationMiddleware, schemes=AuthenticationSchemeProvider)
-
-    if on_error:
-        app.add_exception_handler(AuthenticationError, on_error)
-    else:
-        app.add_exception_handler(
-            AuthenticationError,
-            lambda req, exc: PlainTextResponse('Unauthorized', status_code=401)
-        )
-
-
-def use_authorization(app: FastAPI, on_error: ExceptionHandler | None = None):
-    if on_error:
-        app.add_exception_handler(AuthorizationError, on_error)
-    else:
-        app.add_exception_handler(
-            AuthorizationError,
-            lambda req, exc: PlainTextResponse('Forbidden', status_code=403)
-        )
