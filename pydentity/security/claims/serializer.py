@@ -15,7 +15,7 @@ def _generate_identity_name(identity: ClaimsIdentity) -> str:
 
 
 def _parse_identity_name(key: str) -> tuple[str, str | None, str | None]:
-    auth, name_type, role_type = key.split(".")
+    auth, name_type, role_type = key.rsplit(".", maxsplit=2)
     return auth, name_type if name_type != "None" else None, role_type if role_type != "None" else None
 
 
