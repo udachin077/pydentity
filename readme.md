@@ -1,6 +1,6 @@
 <h1 align="center">Pydentity</h1>
 
-    pip install pydentity-core
+    pip install pydenticore
 
 
 ## class `IdentityOptions`
@@ -100,7 +100,8 @@ Options for user validation.
 ## Validators
 
 ```python
-from pydenticore import UserValidator, PasswordValidator, RoleValidator, UserManager, RoleManager
+from pydenticore import UserManager, RoleManager
+from pydenticore.validators import UserValidator, PasswordValidator, RoleValidator
 
 user_manager = UserManager(
     ...,
@@ -158,7 +159,8 @@ role_manager = RoleManager(
 Password hasher uses `pwdlib`.
 
 ```python
-from pydenticore import Argon2PasswordHasher, UserManager
+from pydenticore import UserManager
+from pydenticore.hashers import Argon2PasswordHasher
 
 user_manager = UserManager(
     ...,
@@ -209,7 +211,8 @@ Tokens are used to verify mail, phone, and two-factor authentication.
 | `DataProtectorTokenProvider`          | `IUserTwoFactorTokenProvider[TUser]`         |
 
 ```python
-from pydenticore import IdentityOptions, EmailTokenProvider, AuthenticatorTokenProvider, DataProtectorTokenProvider
+from pydenticore import IdentityOptions
+from pydenticore.token_providers import EmailTokenProvider, AuthenticatorTokenProvider, DataProtectorTokenProvider
 
 options = IdentityOptions()
 options.tokens.provider_map[options.tokens.email_confirmation_token_provider] = EmailTokenProvider()
