@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "pydenticore"
-version = "0.1.1"
+version = "0.1.2"
 description = ""
 authors = ["Udachin Ivan <pypi.udachin@yandex.ru>"]
 license = "MIT"
@@ -18,8 +18,8 @@ itsdangerous = "^2.2.0"
 cryptography = "43.0.*"
 pyotp = "^2.9.0"
 pwdlib = { version = "0.2.*", extras = ["argon2", "bcrypt"] }
-pydentity-db-sqlalchemy = { version = "0.1.1", optional = true }
-pydentity-db-tortoise = { version = "0.1.1", optional = true }
+pydentity-db-sqlalchemy = { version = "0.1.*", optional = true }
+pydentity-db-tortoise = { version = "0.1.*", optional = true }
 
 [tool.poetry.dev-dependencies]
 pytest = "*"
