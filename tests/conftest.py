@@ -5,10 +5,10 @@ from uuid import uuid4
 
 import pytest
 
-from pydentity import IdentityResult, UserLoginInfo, UserManager, IdentityOptions, UpperLookupNormalizer, RoleManager
-from pydentity.abc.stores import *
-from pydentity.security.claims import Claim
-from pydentity.types import GUID, UserProtokol, RoleProtokol, TRole, TUser
+from pydenticore import IdentityResult, UserLoginInfo, UserManager, IdentityOptions, UpperLookupNormalizer, RoleManager
+from pydenticore.interfaces.stores import *
+from pydenticore.security.claims import Claim
+from pydenticore.types import GUID, UserProtokol, RoleProtokol, TRole, TUser
 
 
 @dataclass

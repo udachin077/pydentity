@@ -1,7 +1,7 @@
 import pytest
 
-from pydentity import UserClaimsPrincipalFactory, IdentityOptions
-from pydentity.security.claims import ClaimTypes
+from pydenticore import UserClaimsPrincipalFactory, IdentityOptions
+from pydenticore.security.claims import ClaimTypes
 from tests.conftest import MockUser
 
 

@@ -1,7 +1,7 @@
 import pytest
 
-from pydentity.exc import DataProtectorError
-from pydentity.dataprotector import DefaultPersonalDataProtector
+from pydenticore.exc import DataProtectorError
+from pydenticore.dataprotector import DefaultPersonalDataProtector
 
 
 @pytest.mark.parametrize("purpose_1, purpose_2, salt_1, salt_2", {

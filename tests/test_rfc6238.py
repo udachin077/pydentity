@@ -2,7 +2,7 @@ import asyncio
 
 import pytest
 
-from pydentity.rfc6238service import Rfc6238AuthenticationService
+from pydenticore.token_providers.rfc6238service import Rfc6238AuthenticationService
 
 
 @pytest.mark.asyncio

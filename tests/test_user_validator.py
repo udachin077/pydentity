@@ -3,7 +3,7 @@ from uuid import uuid4
 
 import pytest
 
-from pydentity import IdentityOptions
+from pydenticore import IdentityOptions
 
 
 @dataclass

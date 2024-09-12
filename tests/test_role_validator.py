@@ -1,6 +1,6 @@
 import pytest
 
-from pydentity import RoleValidator, RoleManager
+from pydenticore import RoleValidator, RoleManager
 from tests.conftest import Role
 
 

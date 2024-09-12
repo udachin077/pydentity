@@ -1,6 +1,6 @@
 import pytest
 
-from pydentity.security.claims import ClaimTypes, ClaimsPrincipal, ClaimsIdentity, Claim
+from pydenticore.security.claims import ClaimTypes, ClaimsPrincipal, ClaimsIdentity, Claim
 from tests.conftest import User
 
 

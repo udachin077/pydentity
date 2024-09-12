@@ -2,7 +2,7 @@ from datetime import timedelta, UTC
 
 import pytest
 
-from pydentity.utils import datetime, is_none_or_empty
+from pydenticore.utils import datetime, is_none_or_empty
 
 
 def test_datetime_utcnow():

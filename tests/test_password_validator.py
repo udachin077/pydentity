@@ -2,9 +2,9 @@ from typing import cast
 
 import pytest
 
-from pydentity import UserManager
-from pydentity.identity_options import IdentityOptions
-from pydentity.password_validator import PasswordValidator
+from pydenticore import UserManager
+from pydenticore.identity_options import IdentityOptions
+from pydenticore.validators import PasswordValidator
 
 
 class MockUserManager:
