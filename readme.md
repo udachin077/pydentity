@@ -2,7 +2,6 @@
 
     pip install pydenticore
 
-
 ## class `IdentityOptions`
 
 ```python
@@ -76,26 +75,26 @@ Options for user tokens.
 | `DEFAULT_PHONE_PROVIDER`          | `str` | `Phone`         |
 | `DEFAULT_AUTHENTICATION_PROVIDER` | `str` | `Authenticator` |
 
-| Attribute                                  | Type                                            | Description                                                                                        | Default                           |
-|--------------------------------------------|-------------------------------------------------|----------------------------------------------------------------------------------------------------|-----------------------------------|
-| `authenticator_token_provider`             | `str`                                           | Gets or sets the token provider used to validate two factor sign ins with an authenticator.        | `DEFAULT_AUTHENTICATION_PROVIDER` |
-| `change_email_token_provider`              | `str`                                           | Gets or sets the token provider used to generate tokens used in email change confirmation emails.  | `DEFAULT_EMAIL_PROVIDER`          |
-| `change_phone_number_token_provider`       | `str`                                           | Gets or sets the token provider used to generate tokens used when changing phone numbers.          | `DEFAULT_PHONE_PROVIDER`          |
-| `email_confirmation_token_provider`        | `str`                                           | Gets or sets the token provider used to generate tokens used in account confirmation emails.       | `DEFAULT_EMAIL_PROVIDER`          |
-| `phone_number_confirmation_token_provider` | `str`                                           | Gets or sets the token provider used to generate tokens used in account confirmation phone number. | `DEFAULT_PHONE_PROVIDER`          |
-| `password_reset_token_provider`            | `str`                                           | Gets or sets the token provider used to generate tokens used in password reset emails.             | `DEFAULT_PROVIDER`                |
-| `totp_interval`                            | `int`                                           | Gets or sets the totp interval in seconds.                                                         | `180`                             |
-| `provider_map`                             | `dict[str, IUserTwoFactorTokenProvider[TUser]]` |                                                                                                    | `{}`                              |
+| Attribute                                  | Type   | Description                                                                                        | Default                           |
+|--------------------------------------------|--------|----------------------------------------------------------------------------------------------------|-----------------------------------|
+| `authenticator_token_provider`             | `str`  | Gets or sets the token provider used to validate two factor sign ins with an authenticator.        | `DEFAULT_AUTHENTICATION_PROVIDER` |
+| `change_email_token_provider`              | `str`  | Gets or sets the token provider used to generate tokens used in email change confirmation emails.  | `DEFAULT_EMAIL_PROVIDER`          |
+| `change_phone_number_token_provider`       | `str`  | Gets or sets the token provider used to generate tokens used when changing phone numbers.          | `DEFAULT_PHONE_PROVIDER`          |
+| `email_confirmation_token_provider`        | `str`  | Gets or sets the token provider used to generate tokens used in account confirmation emails.       | `DEFAULT_EMAIL_PROVIDER`          |
+| `phone_number_confirmation_token_provider` | `str`  | Gets or sets the token provider used to generate tokens used in account confirmation phone number. | `DEFAULT_PHONE_PROVIDER`          |
+| `password_reset_token_provider`            | `str`  | Gets or sets the token provider used to generate tokens used in password reset emails.             | `DEFAULT_PROVIDER`                |
+| `totp_interval`                            | `int`  | Gets or sets the totp interval in seconds.                                                         | `180`                             |
+| `provider_map`                             | `dict` | Will be used to construct user token providers with the key used as the provider name.             | `{}`                              |
 
 ### class `UserOptions`
 
 Options for user validation.
 
-| Attribute                     | Type            | Description                                                                                 | Default                                                              |
-|-------------------------------|-----------------|---------------------------------------------------------------------------------------------|----------------------------------------------------------------------|
-| `allowed_username_characters` | `str`           | Gets or sets the list of allowed characters in the username used to validate user names.    | `abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@.-_` |
-| `require_unique_email`        | `bool`          | Gets or sets a flag indicating whether the application requires unique emails for its auth. | `True`                                                               |
-| `allowed_email_domains`       | `Iterable[str]` | Gets or sets a list of available domains for email.                                         | `None`                                                               |
+| Attribute                     | Type            | Description                                                                                 | Default                                                                            |
+|-------------------------------|-----------------|---------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------|
+| `allowed_username_characters` | `str`           | Gets or sets the list of allowed characters in the username used to validate user names.    | `abcdefghijklmnopqrstuvwxyz`<br/>`ABCDEFGHIJKLMNOPQRSTUVWXYZ`<br/>`0123456789@.-_` |
+| `require_unique_email`        | `bool`          | Gets or sets a flag indicating whether the application requires unique emails for its auth. | `True`                                                                             |
+| `allowed_email_domains`       | `Iterable[str]` | Gets or sets a list of available domains for email.                                         | `None`                                                                             |
 
 ## Validators
 
