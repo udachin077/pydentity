@@ -626,7 +626,3 @@ class IUserTwoFactorStore(IUserStore[TUser], Generic[TUser], ABC):
         :param enabled: A flag indicating whether the specified user has two-factor authentication enabled.
         :return:
         """
-
-
-class IProtectedUserStore(IUserStore[TUser], Generic[TUser], ABC):
-    pass

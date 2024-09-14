@@ -1,7 +1,6 @@
 import base64
-import json
 import platform
-from collections.abc import Callable
+from collections.abc import Callable, Iterable
 from inspect import isfunction
 from typing import overload, Any
 
@@ -11,12 +10,11 @@ from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 
 from pydenticore.authentication.interfaces import (
     IAuthenticationDataProtector,
-    IAuthenticationHandler,
-    IAuthenticationSchemeProvider,
+    IAuthenticationService,
+    IAuthenticationSchemeProvider, IAuthenticationOptionsAccessor,
 )
 from pydenticore.exc import ArgumentNoneException, InvalidOperationException
 from pydenticore.security.claims import ClaimsPrincipal
-from pydenticore.types.decorators import singleton
 
 __all__ = (
     "AuthenticationError",
@@ -34,6 +32,8 @@ class AuthenticationError(Exception):
 
 
 class AuthenticationResult:
+    """ Contains the result of an Authenticate call."""
+
     __slots__ = ("_principal", "_properties",)
 
     def __init__(self, principal: ClaimsPrincipal, properties: dict[str, Any]) -> None:
@@ -42,10 +42,12 @@ class AuthenticationResult:
 
     @property
     def principal(self) -> ClaimsPrincipal:
+        """Gets the claims-principal with authenticated user identities."""
         return self._principal
 
     @property
     def properties(self) -> dict[str, Any]:
+        """Additional state values for the authentication session."""
         return self._properties
 
     def __bool__(self) -> bool:
@@ -53,35 +55,75 @@ class AuthenticationResult:
 
 
 class AuthenticationScheme:
-    __slots__ = ("name", "handler",)
+    """``AuthenticationSchemes`` assign a name to a specific ``IAuthenticationService``."""
 
-    def __init__(self, name: str, handler: IAuthenticationHandler) -> None:
+    __slots__ = ("_name", "_handler", "_display_name",)
+
+    def __init__(self, name: str, handler: IAuthenticationService, display_name: str | None = None) -> None:
+        """
+
+        :param name: The name for the authentication scheme.
+        :param handler: The ``IAuthenticationService`` that handles this scheme.
+        :param display_name: The display name for the authentication scheme.
+        """
         if not name:
             raise ArgumentNoneException("name")
         if not handler:
             raise ArgumentNoneException("handler")
 
-        self.name = name
-        self.handler = handler
+        if issubclass(type(handler), IAuthenticationService):
+            raise ValueError("'handler' must implement IAuthenticationService.")
+
+        self._name = name
+        self._display_name = display_name
+        self._handler = handler
+
+    @property
+    def name(self) -> str:
+        """The name of the authentication scheme."""
+        return self._name
+
+    @property
+    def display_name(self) -> str | None:
+        """The display name for the scheme. Null is valid and used for non user facing schemes."""
+        return self._display_name
+
+    @property
+    def handler(self) -> IAuthenticationService:
+        """The ``IAuthenticationService`` that handles this scheme."""
+        return self._handler
 
 
 class AuthenticationSchemeBuilder:
-    __slots__ = ("name", "handler",)
+    __slots__ = ("_name", "handler", "display_name",)
 
-    def __init__(self, name: str, handler: IAuthenticationHandler | None = None) -> None:
-        self.name = name
+    def __init__(
+            self,
+            name: str,
+            handler: IAuthenticationService | None = None,
+            display_name: str | None = None
+    ) -> None:
+        self._name = name
         self.handler = handler
+        """Gets or sets the ``IAuthenticationService`` type responsible for this scheme."""
+        self.display_name = display_name
+        """Gets or sets the display name for the scheme being built."""
+
+    @property
+    def name(self) -> str:
+        """Gets the name of the scheme being built."""
+        return self._name
 
     def build(self) -> AuthenticationScheme:
+        """Builds the ``AuthenticationScheme`` instance."""
         if not self.handler:
             raise InvalidOperationException("'handler' must be configured to build an AuthenticationScheme.")
-        return AuthenticationScheme(self.name, self.handler)
+        return AuthenticationScheme(self.name, self.handler, self.display_name)
 
 
-@singleton
 class AuthenticationOptions:
     __slots__ = (
-        "_scheme_map",
+        "__scheme_map",
         "default_scheme",
         "default_authentication_scheme",
         "default_sign_in_scheme",
@@ -90,20 +132,46 @@ class AuthenticationOptions:
     )
 
     def __init__(self) -> None:
-        self._scheme_map: dict[str, AuthenticationScheme] = {}
+        self.__scheme_map: dict[str, AuthenticationScheme] = {}
         self.default_scheme: str = ""
+        """Used as the fallback default scheme for all the other defaults."""
         self.default_authentication_scheme: str = ""
+        """Used as the default scheme by ``authenticate(HttpContext, str)``."""
         self.default_sign_in_scheme: str = ""
+        """Used as the default scheme sign_in(HttpContext, str, ClaimsPrincipal, dict[str, ...])."""
         self.default_sign_out_scheme: str = ""
+        """Used as the default scheme by sign_out(HttpContext, str, dict[str, ...])."""
         self.required_authenticated_signin: bool = True
+        """
+        If true, sign_in should throw if attempted with a user is not authenticated.
+        A user is considered authenticated if ``ClaimsIdentity.is_authenticated`` returns ``True`` 
+        for the ``ClaimsPrincipal`` associated with the HTTP request.
+        """
+
+    @property
+    def scheme_map(self) -> dict[str, AuthenticationScheme]:
+        """Maps schemes by name."""
+        return self.__scheme_map
 
     @overload
     def add_scheme(self, name: str, scheme: AuthenticationScheme) -> None:
-        pass
+        """
+        Adds an ``AuthenticationScheme``.
+
+        :param name: The name of the scheme being added.
+        :param scheme:
+        :return:
+        """
 
     @overload
     def add_scheme(self, name: str, configure_scheme: Callable[[AuthenticationSchemeBuilder], None]) -> None:
-        pass
+        """
+        Add a scheme that is built from a delegate with the provided name.
+
+        :param name: The name of the scheme being added.
+        :param configure_scheme: Configures the scheme.
+        :return:
+        """
 
     def add_scheme(
             self,
@@ -112,57 +180,61 @@ class AuthenticationOptions:
     ) -> None:
         if not name:
             raise ArgumentNoneException("name")
-        if name in self._scheme_map:
-            raise InvalidOperationException(f"Scheme already exists: {name}.")
-
         if not scheme_or_builder:
             raise ArgumentNoneException("scheme_or_builder")
+        if name in self.__scheme_map:
+            raise InvalidOperationException(f"Scheme already exists: {name}.")
 
         if isinstance(scheme_or_builder, AuthenticationScheme):
-            self._scheme_map[name] = scheme_or_builder
+            self.__scheme_map[name] = scheme_or_builder
 
         elif isfunction(scheme_or_builder):
             builder = AuthenticationSchemeBuilder(name)
             scheme_or_builder(builder)
-            self._scheme_map[name] = builder.build()
+            self.__scheme_map[name] = builder.build()
 
         else:
             raise NotImplementedError
 
 
 class AuthenticationSchemeProvider(IAuthenticationSchemeProvider):
-    __slots__ = ("_auto_default_scheme", "options",)
+    """Implements ``IAuthenticationSchemeProvider``."""
 
-    def __init__(self) -> None:
-        self.options: AuthenticationOptions = AuthenticationOptions()
+    __slots__ = ("__options", "_auto_default_scheme",)
+
+    def __init__(self, options: IAuthenticationOptionsAccessor) -> None:
+        self.__options = options.value
         self._auto_default_scheme = None
 
-        for scheme in getattr(self.options, "_scheme_map").values():
+        for scheme in self.__options.scheme_map.values():
             self._auto_default_scheme = scheme
             break
+
+    async def get_all_schemes(self) -> Iterable[AuthenticationScheme]:
+        return self.__options.scheme_map.values()
 
     async def get_scheme(self, name: str) -> AuthenticationScheme | None:
         if not name:
             raise ArgumentNoneException("name")
-        return getattr(self.options, "_scheme_map").get(name)
+        return self.__options.scheme_map.get(name)
 
     async def get_default_authentication_scheme(self) -> AuthenticationScheme | None:
-        if name := self.options.default_authentication_scheme:
+        if name := self.__options.default_authentication_scheme:
             return await self.get_scheme(name)
         return await self.get_default_scheme()
 
     async def get_default_sign_in_scheme(self) -> AuthenticationScheme | None:
-        if name := self.options.default_sign_in_scheme:
+        if name := self.__options.default_sign_in_scheme:
             return await self.get_scheme(name)
         return await self.get_default_scheme()
 
     async def get_default_sign_out_scheme(self) -> AuthenticationScheme | None:
-        if name := self.options.default_sign_out_scheme:
+        if name := self.__options.default_sign_out_scheme:
             return await self.get_scheme(name)
         return await self.get_default_sign_in_scheme()
 
     async def get_default_scheme(self) -> AuthenticationScheme | None:
-        if name := self.options.default_scheme:
+        if name := self.__options.default_scheme:
             return await self.get_scheme(name)
         return self._auto_default_scheme
 
@@ -184,12 +256,17 @@ class DefaultAuthenticationDataProtector(IAuthenticationDataProtector):
         key = base64.urlsafe_b64encode(kdf.derive(key))
         self.__fernet = Fernet(key)
 
-    def protect(self, data: dict | None) -> str | None:
-        if data is not None:
-            return self.__fernet.encrypt(json.dumps(data, separators=(",", ":")).encode()).decode()
-        return data
+    def protect(self, plain_text: str | bytes) -> str | None:
+        if plain_text is None:
+            return plain_text
 
-    def unprotect(self, data: str | None) -> dict | None:
-        if data is not None:
-            return json.loads(self.__fernet.decrypt(data))
-        return data
+        if isinstance(plain_text, str):
+            plain_text = plain_text.encode()
+
+        return self.__fernet.encrypt(plain_text).decode()
+
+    def unprotect(self, protected_data: str | bytes) -> str | None:
+        if protected_data is None:
+            return protected_data
+
+        return self.__fernet.decrypt(protected_data).decode()

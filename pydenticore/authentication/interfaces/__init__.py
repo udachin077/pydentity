@@ -1,54 +1,122 @@
 from abc import ABC, abstractmethod
-from typing import Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 from pydenticore.security.claims import ClaimsPrincipal
 
 if TYPE_CHECKING:
     from pydenticore.http.context import HttpContext
-    from pydenticore.authentication._base import AuthenticationResult, AuthenticationScheme
+    from pydenticore.authentication._base import AuthenticationResult, AuthenticationScheme, AuthenticationOptions
 
 
-class IAuthenticationHandler(ABC):
+class IAuthenticationService(ABC):
+    """Used to provide authentication."""
+
     @abstractmethod
     async def authenticate(self, context: "HttpContext", scheme: str) -> "AuthenticationResult":
-        pass
+        """
+        Authenticate for the specified authentication scheme.
+
+        :param context: The ``HttpContext``.
+        :param scheme: The name of the authentication scheme.
+        :return:
+        """
 
     @abstractmethod
     async def sign_in(self, context: "HttpContext", scheme: str, principal: ClaimsPrincipal, **properties) -> None:
-        pass
+        """
+        Sign a principal in for the specified authentication scheme.
+
+        :param context: The ``HttpContext``.
+        :param scheme: The name of the authentication scheme.
+        :param principal: The ``ClaimsPrincipal`` to sign in.
+        :param properties: The ``AuthenticationProperties``.
+        :return:
+        """
 
     @abstractmethod
     async def sign_out(self, context: "HttpContext", scheme: str) -> None:
-        pass
+        """
+        Sign out the specified authentication scheme.
+
+        :param context: The ``HttpContext``.
+        :param scheme: The name of the authentication scheme.
+        :return:
+        """
 
 
 class IAuthenticationSchemeProvider(ABC):
+    """Responsible for managing what authenticationSchemes are supported."""
+
+    @abstractmethod
+    async def get_all_schemes(self):
+        """Returns all currently registered ``AuthenticationSchemes``."""
+
     @abstractmethod
     async def get_scheme(self, name: str) -> Optional["AuthenticationScheme"]:
-        pass
+        """
+        Returns the ``AuthenticationScheme`` matching the name, or null.
+
+        :param name: The name of the authentication scheme.
+        :return:
+        """
 
     @abstractmethod
     async def get_default_authentication_scheme(self) -> Optional["AuthenticationScheme"]:
-        pass
+        """
+        Returns the scheme that will be used by default for authenticate(HttpContext, str).
+        This is typically specified via AuthenticationOptions.default_authenticate_scheme.
+        Otherwise, this will fallback to AuthenticationOptions.default_scheme.
+
+        :return:
+        """
 
     @abstractmethod
     async def get_default_sign_in_scheme(self) -> Optional["AuthenticationScheme"]:
-        pass
+        """
+        Returns the scheme that will be used by default for sign_in(HttpContext, str, ClaimsPrincipal, dict[str, ...]).
+        This is typically specified via AuthenticationOptions.default_sign_in_scheme.
+        Otherwise, this will fallback to AuthenticationOptions.default_scheme.
+
+        :return:
+        """
 
     @abstractmethod
     async def get_default_sign_out_scheme(self) -> Optional["AuthenticationScheme"]:
-        pass
+        """
+        Returns the scheme that will be used by default for sign_out(HttpContext, str).
+        This is typically specified via AuthenticationOptions.default_sign_out_scheme.
+        Otherwise, this will fallback to AuthenticationOptions.default_scheme.
 
-    @abstractmethod
-    async def get_default_scheme(self) -> Optional["AuthenticationScheme"]:
-        pass
+        :return:
+        """
 
 
 class IAuthenticationDataProtector(ABC):
-    @abstractmethod
-    def unprotect(self, data: str | None) -> dict | None:
-        pass
+    """An interface that can provide data protection services."""
 
     @abstractmethod
-    def protect(self, data: dict | None) -> str | None:
-        pass
+    def protect(self, plain_text: str | bytes) -> str | None:
+        """
+        Cryptographically protects a piece of plaintext data.
+
+        :param plain_text: The plaintext data to protect.
+        :return:
+        """
+
+    @abstractmethod
+    def unprotect(self, protected_data: str | bytes) -> str | None:
+        """
+        Cryptographically unprotects a piece of protected data.
+
+        :param protected_data: The protected data to unprotect.
+        :return:
+        """
+
+
+class IAuthenticationOptionsAccessor(ABC):
+    def __init__(self, options: "AuthenticationOptions"):
+        self.__options = options
+
+    @property
+    def value(self) -> "AuthenticationOptions":
+        return self.__options

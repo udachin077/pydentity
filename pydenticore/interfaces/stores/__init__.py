@@ -1,5 +1,4 @@
 from pydenticore.interfaces.stores.user_store import (
-    IUserStore,
     IUserAuthenticationTokenStore,
     IUserAuthenticatorKeyStore,
     IUserClaimStore,
@@ -10,8 +9,8 @@ from pydenticore.interfaces.stores.user_store import (
     IUserPhoneNumberStore,
     IUserRoleStore,
     IUserSecurityStampStore,
+    IUserStore,
     IUserTwoFactorRecoveryCodeStore,
     IUserTwoFactorStore,
-    IProtectedUserStore
 )
 from pydenticore.interfaces.stores.role_store import IRoleStore, IRoleClaimStore

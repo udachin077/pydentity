@@ -37,7 +37,7 @@ def principal_serialize(principal: ClaimsPrincipal) -> dict[str, Any] | None:
             result[key] = []
 
         for claim in identity.claims:
-            result[key].append((claim.type, claim.value,))
+            result[key].append((claim.type, claim.http_context,))
 
     return result
 

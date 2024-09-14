@@ -2,6 +2,14 @@
 
     pip install pydenticore
 
+For SQLAlchemy:
+
+    pip install pydenticore[sqlalchemy]    
+
+For TotroiseORM:
+
+    pip install pydenticore[tortoise] 
+
 ## class `IdentityOptions`
 
 ```python
