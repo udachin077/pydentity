@@ -10,7 +10,7 @@ from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 
 from pydenticore.authentication.interfaces import (
     IAuthenticationDataProtector,
-    IAuthenticationService,
+    IAuthenticationHandler,
     IAuthenticationSchemeProvider, IAuthenticationOptionsAccessor,
 )
 from pydenticore.exc import ArgumentNoneException, InvalidOperationException
@@ -59,7 +59,7 @@ class AuthenticationScheme:
 
     __slots__ = ("_name", "_handler", "_display_name",)
 
-    def __init__(self, name: str, handler: IAuthenticationService, display_name: str | None = None) -> None:
+    def __init__(self, name: str, handler: IAuthenticationHandler, display_name: str | None = None) -> None:
         """
 
         :param name: The name for the authentication scheme.
@@ -71,7 +71,7 @@ class AuthenticationScheme:
         if not handler:
             raise ArgumentNoneException("handler")
 
-        if issubclass(type(handler), IAuthenticationService):
+        if issubclass(type(handler), IAuthenticationHandler):
             raise ValueError("'handler' must implement IAuthenticationService.")
 
         self._name = name
@@ -89,7 +89,7 @@ class AuthenticationScheme:
         return self._display_name
 
     @property
-    def handler(self) -> IAuthenticationService:
+    def handler(self) -> IAuthenticationHandler:
         """The ``IAuthenticationService`` that handles this scheme."""
         return self._handler
 
@@ -100,7 +100,7 @@ class AuthenticationSchemeBuilder:
     def __init__(
             self,
             name: str,
-            handler: IAuthenticationService | None = None,
+            handler: IAuthenticationHandler | None = None,
             display_name: str | None = None
     ) -> None:
         self._name = name

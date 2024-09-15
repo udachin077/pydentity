@@ -1,7 +1,7 @@
 from abc import abstractmethod, ABC
 
 from pydenticore.authentication import AuthenticationResult
-from pydenticore.authentication.interfaces import IAuthenticationService, IAuthenticationSchemeProvider
+from pydenticore.authentication.interfaces import IAuthenticationHandler, IAuthenticationSchemeProvider
 from pydenticore.exc import InvalidOperationException
 from pydenticore.security.claims import ClaimsPrincipal
 from pydenticore.types import TRequest, TResponse
@@ -57,7 +57,7 @@ class HttpContext:
     async def sign_out(self, scheme: str) -> None:
         await (await self.get_authentication_service(scheme)).sign_out(self, scheme)
 
-    async def get_authentication_service(self, name: str) -> IAuthenticationService:
+    async def get_authentication_service(self, name: str) -> IAuthenticationHandler:
         if scheme := await self._schemes.get_scheme(name):
             return scheme.handler
         raise InvalidOperationException(f"Scheme {name} not registered.")

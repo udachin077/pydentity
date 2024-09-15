@@ -8,7 +8,7 @@ if TYPE_CHECKING:
     from pydenticore.authentication._base import AuthenticationResult, AuthenticationScheme, AuthenticationOptions
 
 
-class IAuthenticationService(ABC):
+class IAuthenticationHandler(ABC):
     """Used to provide authentication."""
 
     @abstractmethod
