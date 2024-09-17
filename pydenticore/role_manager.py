@@ -1,5 +1,6 @@
 import logging
-from typing import Generic, Optional, Iterable, cast
+from collections.abc import Iterable
+from typing import Generic, Optional, cast
 
 from pydenticore.interfaces import IRoleValidator, ILookupNormalizer, ILogger
 from pydenticore.interfaces.stores import IRoleStore, IRoleClaimStore
