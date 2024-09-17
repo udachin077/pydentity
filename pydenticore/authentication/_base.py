@@ -55,7 +55,7 @@ class AuthenticationResult:
 
 
 class AuthenticationScheme:
-    """``AuthenticationSchemes`` assign a name to a specific ``IAuthenticationService``."""
+    """``AuthenticationSchemes`` assign a name to a specific ``IAuthenticationHandler``."""
 
     __slots__ = ("_name", "_handler", "_display_name",)
 
@@ -63,7 +63,7 @@ class AuthenticationScheme:
         """
 
         :param name: The name for the authentication scheme.
-        :param handler: The ``IAuthenticationService`` that handles this scheme.
+        :param handler: The ``IAuthenticationHandler`` that handles this scheme.
         :param display_name: The display name for the authentication scheme.
         """
         if not name:
@@ -71,8 +71,8 @@ class AuthenticationScheme:
         if not handler:
             raise ArgumentNoneException("handler")
 
-        if issubclass(type(handler), IAuthenticationHandler):
-            raise ValueError("'handler' must implement IAuthenticationService.")
+        if not issubclass(type(handler), IAuthenticationHandler):
+            raise ValueError("'handler' must implement IAuthenticationHandler.")
 
         self._name = name
         self._display_name = display_name
@@ -90,7 +90,7 @@ class AuthenticationScheme:
 
     @property
     def handler(self) -> IAuthenticationHandler:
-        """The ``IAuthenticationService`` that handles this scheme."""
+        """The ``IAuthenticationHandler`` that handles this scheme."""
         return self._handler
 
 
@@ -105,7 +105,7 @@ class AuthenticationSchemeBuilder:
     ) -> None:
         self._name = name
         self.handler = handler
-        """Gets or sets the ``IAuthenticationService`` type responsible for this scheme."""
+        """Gets or sets the ``IAuthenticationHandler`` type responsible for this scheme."""
         self.display_name = display_name
         """Gets or sets the display name for the scheme being built."""
 

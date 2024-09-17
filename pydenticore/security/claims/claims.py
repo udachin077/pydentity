@@ -230,7 +230,7 @@ class ClaimsIdentity:
             case 2:
                 claim_type, claim_value = args
                 if isinstance(claim_type, str):
-                    return self.has_claim(lambda c: bool(c and c.type == claim_type and c.http_context == claim_value))
+                    return self.has_claim(lambda c: bool(c and c.type == claim_type and c.value == claim_value))
 
                 raise TypeError('claim_type must be "str"')
             case _:
@@ -391,7 +391,7 @@ class ClaimsPrincipal:
             case 2:
                 claim_type, claim_value = args
                 if isinstance(claim_type, str):
-                    return self.has_claim(lambda c: bool(c and c.type == claim_type and c.http_context == claim_value))
+                    return self.has_claim(lambda c: bool(c and c.type == claim_type and c.value == claim_value))
 
                 raise TypeError('claim_type must be "str"')
             case _:
