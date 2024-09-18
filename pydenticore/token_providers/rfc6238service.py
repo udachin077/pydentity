@@ -23,8 +23,14 @@ class Rfc6238AuthenticationService:
         return _create_totp(security_token, modifier, interval).now()
 
     @staticmethod
-    def validate_code(security_token: bytes, code: str, modifier: bytes | None = None, interval: int = 30) -> bool:
-        return _create_totp(security_token, modifier, interval).verify(code)
+    def validate_code(
+            security_token: bytes,
+            code: str,
+            modifier: bytes | None = None,
+            interval: int = 30,
+            valid_window: int = 0
+    ) -> bool:
+        return _create_totp(security_token, modifier, interval).verify(code, valid_window=valid_window)
 
 
 generate_code = Rfc6238AuthenticationService.generate_code

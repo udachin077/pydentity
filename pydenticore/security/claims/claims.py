@@ -119,8 +119,7 @@ class ClaimsIdentity:
         """
         ...
 
-    def find_all(self, *args) -> Generator[Claim]:
-        _match, = args
+    def find_all(self, _match) -> Generator[Claim]:
         if isfunction(_match):
             for claim in self.claims:
                 if _match(claim):
@@ -150,8 +149,7 @@ class ClaimsIdentity:
         """
         ...
 
-    def find_first(self, *args) -> Optional[Claim]:
-        _match, = args
+    def find_first(self, _match) -> Optional[Claim]:
         if isfunction(_match):
             for claim in self.claims:
                 if _match(claim):
@@ -163,7 +161,7 @@ class ClaimsIdentity:
             raise NotImplemented
 
     @overload
-    def find_first_value(self, _match: Predicate[Claim], /) -> Optional[str]:
+    def find_first_value(self, _match: Predicate[Claim], /) -> Optional[Any]:
         """
         Return the claim value for the first claim with the specified match if it exists, null otherwise.
 
@@ -173,7 +171,7 @@ class ClaimsIdentity:
         ...
 
     @overload
-    def find_first_value(self, claim_type: str, /) -> Optional[str]:
+    def find_first_value(self, claim_type: str, /) -> Optional[Any]:
         """
         Return the claim value for the first claim with the specified ``claim_type`` if it exists, null otherwise.
 
@@ -182,8 +180,7 @@ class ClaimsIdentity:
         """
         ...
 
-    def find_first_value(self, *args) -> Optional[str]:
-        _match, = args
+    def find_first_value(self, _match) -> Optional[Any]:
         if isfunction(_match):
             if claim := self.find_first(_match):
                 return claim.value
@@ -280,8 +277,7 @@ class ClaimsPrincipal:
         """
         ...
 
-    def find_all(self, *args) -> Generator[Claim]:
-        _match, = args
+    def find_all(self, _match) -> Generator[Claim]:
         if isfunction(_match):
             for identity in self._identities:
                 for claim in identity.find_all(_match):
@@ -311,8 +307,7 @@ class ClaimsPrincipal:
         """
         ...
 
-    def find_first(self, *args):
-        _match, = args
+    def find_first(self, _match):
         if isfunction(_match):
             for identity in self._identities:
                 if claim := identity.find_first(_match):
@@ -343,8 +338,7 @@ class ClaimsPrincipal:
         """
         ...
 
-    def find_first_value(self, *args) -> Optional[str]:
-        _match, = args
+    def find_first_value(self, _match) -> Optional[str]:
         if isfunction(_match):
             if claim := self.find_first(_match):
                 return claim.value

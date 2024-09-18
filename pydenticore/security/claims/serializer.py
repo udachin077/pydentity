@@ -1,3 +1,4 @@
+import json
 from typing import Any
 
 from pydenticore.security.claims.claims import ClaimsPrincipal, ClaimsIdentity, Claim
@@ -24,7 +25,7 @@ def _parse_identity_name(key: str) -> tuple[str, str | None, str | None]:
     return auth, name_type if name_type != "None" else None, role_type if role_type != "None" else None
 
 
-def principal_serialize(principal: ClaimsPrincipal) -> dict[str, Any] | None:
+def principal_serialize(principal: ClaimsPrincipal) -> str | None:
     if principal is None:
         return None
 
@@ -39,20 +40,21 @@ def principal_serialize(principal: ClaimsPrincipal) -> dict[str, Any] | None:
         for claim in identity.claims:
             result[key].append((claim.type, claim.value,))
 
-    return result
+    return json.dumps(result, separators=(',', ':',))
 
 
-def principal_deserialize(data: dict) -> ClaimsPrincipal | None:
+def principal_deserialize(data: str | bytes | bytearray) -> ClaimsPrincipal | None:
     if data is None:
         return None
 
     principal = ClaimsPrincipal()
+    data = json.loads(data)
 
     for key in data.keys():
         authentication_type, name_claim_type, role_claim_type = _parse_identity_name(key)
         identity = ClaimsIdentity(
             authentication_type,
-            *[Claim(*claim_tuple) for claim_tuple in data[key]],
+            *(Claim(*claim_tuple) for claim_tuple in data[key]),
             name_claim_type=name_claim_type,
             role_claim_type=role_claim_type
         )

@@ -1,10 +1,10 @@
-import logging
 from datetime import timedelta
 from typing import TYPE_CHECKING, Generic, override
 
 from itsdangerous import URLSafeTimedSerializer, BadSignature, SignatureExpired
 
-from pydenticore.interfaces import IUserTwoFactorTokenProvider
+from pydenticore.interfaces import IUserTwoFactorTokenProvider, ILogger
+from pydenticore.loggers import data_protection_token_provider_logger
 from pydenticore.token_providers.rfc6238service import generate_code, validate_code
 from pydenticore.types import TUser
 from pydenticore.utils import is_none_or_empty
@@ -129,10 +129,28 @@ class AuthenticatorTokenProvider(IUserTwoFactorTokenProvider[TUser], Generic[TUs
 
 
 class DataProtectorTokenProvider(IUserTwoFactorTokenProvider[TUser], Generic[TUser]):
-    def __init__(self, purpose: str | None = None, token_lifespan: timedelta = timedelta(minutes=10)):
+    __slots__ = ("_serializer", "_token_lifespan", "_logger",)
+
+    def __init__(
+            self,
+            purpose: str | None = None,
+            token_lifespan: int | timedelta = 600,
+            logger: ILogger["DataProtectorTokenProvider"] | None = None
+    ) -> None:
+        """
+
+        :param purpose:
+        :param token_lifespan: The amount of time a generated token remains valid. Default to 600 seconds.
+        :param logger:
+        """
         self._serializer = URLSafeTimedSerializer(purpose or "DataProtectorTokenProvider")
-        self._token_lifespan = int(token_lifespan.total_seconds())
-        self.logger = logging.Logger(self.__class__.__name__)
+
+        if isinstance(token_lifespan, timedelta):
+            self._token_lifespan = int(token_lifespan.total_seconds())
+        else:
+            self._token_lifespan = token_lifespan
+
+        self._logger = logger or data_protection_token_provider_logger
 
     async def generate(self, manager: "UserManager[TUser]", purpose: str, user: TUser) -> str:
         user_id = await manager.get_user_id(user)
@@ -150,32 +168,32 @@ class DataProtectorTokenProvider(IUserTwoFactorTokenProvider[TUser], Generic[TUs
         try:
             data = self._serializer.loads(token, max_age=self._token_lifespan)
         except BadSignature:
-            self.logger.error("Bad signature")
+            self._logger.error("Bad signature.")
             return False
         except SignatureExpired:
-            self.logger.error("Invalid expiration time")
+            self._logger.error("Invalid expiration time.")
             return False
         else:
             try:
                 if data["user_id"] != await manager.get_user_id(user):
-                    self.logger.error("User ID not equals")
+                    self._logger.error("User ID not equals.")
                     return False
 
                 if data["purpose"] != purpose:
-                    self.logger.error("Purpose not equals")
+                    self._logger.error("Purpose not equals.")
                     return False
 
                 if manager.supports_user_security_stamp:
-                    is_equals_security_stamp = data["stamp"] != await manager.get_security_stamp(user)
+                    is_equals_security_stamp = data["stamp"] == await manager.get_security_stamp(user)
                     if not is_equals_security_stamp:
-                        self.logger.error("Security stamp not equals")
+                        self._logger.error("Security stamp not equals.")
                     return is_equals_security_stamp
 
-                stamp_is_empty = bool(data["stamp"])
+                stamp_is_empty = not bool(data["stamp"])
                 if not stamp_is_empty:
-                    self.logger.error("Security stamp is not empty")
+                    self._logger.error("Security stamp is not empty.")
                 return stamp_is_empty
 
             except KeyError as ex:
-                self.logger.error(ex)
+                self._logger.error(str(ex))
                 return False
