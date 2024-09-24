@@ -2,7 +2,7 @@ from time import sleep
 
 import pytest
 
-from pydenticore.token_providers.rfc6238service import generate_code, validate_code
+from pydentity.token_providers.rfc6238service import generate_code, validate_code
 
 tokens = [b"EmailConfirmation", b"Authenticator"]
 intervals_false = [1, 2, 3]

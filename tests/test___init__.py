@@ -1,6 +1,6 @@
 import types
 
-from pydenticore.utils import islist, is_none_or_empty
+from pydentity.utils import islist, is_none_or_empty
 
 
 def test_islist():

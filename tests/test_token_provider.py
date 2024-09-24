@@ -3,11 +3,11 @@ from typing import cast
 
 import pytest
 
-from pydenticore import UserManager, IdentityOptions
-from pydenticore.token_providers import TotpSecurityStampBasedTokenProvider, AuthenticatorTokenProvider, \
+from pydentity import UserManager, IdentityOptions
+from pydentity.token_providers import TotpSecurityStampBasedTokenProvider, AuthenticatorTokenProvider, \
     DataProtectorTokenProvider
-from pydenticore.token_providers.rfc6238service import generate_code
-from pydenticore.types import UserProtokol
+from pydentity.token_providers.rfc6238service import generate_code
+from pydentity.types import UserProtokol
 
 
 class MockUser(UserProtokol):

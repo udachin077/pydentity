@@ -1,7 +1,7 @@
 import pytest
 
-from pydenticore.security.claims import ClaimsPrincipal, ClaimsIdentity, Claim, ClaimTypes
-from pydenticore.security.claims.serializer import principal_serialize, principal_deserialize
+from pydentity.security.claims import ClaimsPrincipal, ClaimsIdentity, Claim, ClaimTypes
+from pydentity.security.claims.serializer import principal_serialize, principal_deserialize
 
 
 @pytest.fixture

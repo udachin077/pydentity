@@ -1,4 +1,4 @@
-from pydenticore import UpperLookupNormalizer, LowerLookupNormalizer
+from pydentity import UpperLookupNormalizer, LowerLookupNormalizer
 
 
 def test_upper_lookup_normalizer():

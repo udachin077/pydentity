@@ -2,8 +2,8 @@ from typing import cast
 
 import pytest
 
-from pydenticore import IdentityOptions, UserManager
-from pydenticore.validators import PasswordValidator
+from pydentity import IdentityOptions, UserManager
+from pydentity.validators import PasswordValidator
 
 
 class MockUserManager:

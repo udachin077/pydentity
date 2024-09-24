@@ -13,7 +13,7 @@ For TotroiseORM:
 ## class `IdentityOptions`
 
 ```python
-from pydenticore import IdentityOptions
+from pydentity import IdentityOptions
 
 options = IdentityOptions()
 ```
@@ -107,8 +107,8 @@ Options for user validation.
 ## Validators
 
 ```python
-from pydenticore import UserManager, RoleManager
-from pydenticore.validators import UserValidator, PasswordValidator, RoleValidator
+from pydentity import UserManager, RoleManager
+from pydentity.validators import UserValidator, PasswordValidator, RoleValidator
 
 user_manager = UserManager(
     ...,
@@ -130,9 +130,9 @@ role_manager = RoleManager(
 ### Custom validators
 
 ```python
-from pydenticore import IdentityResult, UserManager, RoleManager
-from pydenticore.interfaces import IUserValidator, IPasswordValidator, IRoleValidator
-from pydenticore.types import TUser, TRole
+from pydentity import IdentityResult, UserManager, RoleManager
+from pydentity.interfaces import IUserValidator, IPasswordValidator, IRoleValidator
+from pydentity.types import TUser, TRole
 
 
 class CustomUserValidator(IUserValidator):
@@ -166,8 +166,8 @@ role_manager = RoleManager(
 Password hasher uses `pwdlib`.
 
 ```python
-from pydenticore import UserManager
-from pydenticore.hashers import Argon2PasswordHasher
+from pydentity import UserManager
+from pydentity.hashers import Argon2PasswordHasher
 
 user_manager = UserManager(
     ...,
@@ -184,9 +184,9 @@ user_manager = UserManager(
 ### Custom password hasher
 
 ```python
-from pydenticore import UserManager
-from pydenticore.interfaces import IPasswordHasher, PasswordVerificationResult
-from pydenticore.types import TUser
+from pydentity import UserManager
+from pydentity.interfaces import IPasswordHasher, PasswordVerificationResult
+from pydentity.types import TUser
 
 
 class CustomPasswordHasher(IPasswordHasher):
@@ -218,8 +218,8 @@ Tokens are used to verify mail, phone, and two-factor authentication.
 | `DataProtectorTokenProvider`          | `IUserTwoFactorTokenProvider[TUser]`         |
 
 ```python
-from pydenticore import IdentityOptions
-from pydenticore.token_providers import EmailTokenProvider, AuthenticatorTokenProvider, DataProtectorTokenProvider
+from pydentity import IdentityOptions
+from pydentity.token_providers import EmailTokenProvider, AuthenticatorTokenProvider, DataProtectorTokenProvider
 
 options = IdentityOptions()
 options.tokens.provider_map[options.tokens.email_confirmation_token_provider] = EmailTokenProvider()
@@ -244,15 +244,15 @@ sh = logging.StreamHandler(sys.stdout)
 sh.setLevel(logging.DEBUG)
 sh.setFormatter(fmt)
 
-user_manager_logger = logging.getLogger("pydenticore.user_manager")
+user_manager_logger = logging.getLogger("pydentity.user_manager")
 user_manager_logger.setLevel(logging.DEBUG)
 user_manager_logger.addHandler(sh)
 
-role_manager_logger = logging.getLogger("pydenticore.role_manager")
+role_manager_logger = logging.getLogger("pydentity.role_manager")
 role_manager_logger.setLevel(logging.DEBUG)
 role_manager_logger.addHandler(sh)
 
-sign_in_manager_logger = logging.getLogger("pydenticore.signin_manager")
+sign_in_manager_logger = logging.getLogger("pydentity.signin_manager")
 sign_in_manager_logger.setLevel(logging.DEBUG)
 sign_in_manager_logger.addHandler(sh)
 ```
@@ -260,8 +260,8 @@ sign_in_manager_logger.addHandler(sh)
 ### Custom logger
 
 ```python
-from pydenticore.interfaces import ILogger
-from pydenticore import UserManager
+from pydentity.interfaces import ILogger
+from pydentity import UserManager
 
 
 class UserManagerLogger(ILogger):

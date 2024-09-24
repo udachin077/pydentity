@@ -1,8 +1,8 @@
 import pytest
 
-from pydenticore.hashers import BcryptPasswordHasher, Argon2PasswordHasher
-from pydenticore.interfaces import PasswordVerificationResult
-from pydenticore.types import UserProtokol
+from pydentity.hashers import BcryptPasswordHasher, Argon2PasswordHasher
+from pydentity.interfaces import PasswordVerificationResult
+from pydentity.types import UserProtokol
 
 
 class MockUser(UserProtokol):

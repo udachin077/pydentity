@@ -1,6 +1,6 @@
 import pytest
 
-from pydenticore.security.claims import ClaimsPrincipal, ClaimsIdentity, Claim, ClaimTypes
+from pydentity.security.claims import ClaimsPrincipal, ClaimsIdentity, Claim, ClaimTypes
 
 
 @pytest.fixture
