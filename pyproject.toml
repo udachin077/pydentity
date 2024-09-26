@@ -1,15 +1,12 @@
 [tool.poetry]
 name = "pydentity-core"
-version = "0.2.0"
+version = "0.2.1"
 description = ""
 authors = ["Udachin Ivan <pypi.udachin@yandex.ru>"]
 license = "MIT"
-homepage = "https://github.com/udachin077/pydentity"
-repository = "https://github.com/udachin077/pydentity.git"
-exclude = [
-    "tests",
-    "example"
-]
+homepage = "https://github.com/udachin077/pydentity-core"
+repository = "https://github.com/udachin077/pydentity-core.git"
+exclude = ["tests", "example"]
 packages = [{ include = "pydentity", from = "." }]
 
 [tool.poetry.dependencies]
@@ -19,8 +16,8 @@ itsdangerous = "^2.2.0"
 cryptography = "43.0.*"
 pyotp = "^2.9.0"
 pwdlib = { version = "0.2.*", extras = ["argon2", "bcrypt"] }
-pydentity-db-sqlalchemy = { version = "0.1.*", optional = true }
-pydentity-db-tortoise = { version = "0.1.*", optional = true }
+pydentity-core-sqlalchemy = { version = "0.1.*", optional = true }
+pydentity-core-tortoise = { version = "0.1.*", optional = true }
 
 [tool.poetry.dev-dependencies]
 pytest = "*"
@@ -29,8 +26,8 @@ mypy = "1.11.0"
 types-passlib = "1.7.*"
 
 [tool.poetry.extras]
-sqlalchemy = ["pydentity-db-sqlalchemy"]
-tortoise = ["pydentity-db-tortoise"]
+sqlalchemy = ["pydentity-core-sqlalchemy"]
+tortoise = ["pydentity-core-tortoise"]
 
 [build-system]
 requires = ["poetry-core"]

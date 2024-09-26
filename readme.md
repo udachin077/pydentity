@@ -1,14 +1,60 @@
-<h1 align="center">Pydentity</h1>
+<h1 align="center">Pydentity-Core</h1>
 
-    pip install pydenticore
+    $ pip install pydentity-core
 
-For SQLAlchemy:
+## Example
 
-    pip install pydenticore[sqlalchemy]    
+```python
+from pydentity import IdentityOptions, UserManager, RoleManager
+from pydentity.hashers import Argon2PasswordHasher
+from pydentity.interfaces.stores import IUserStore, IRoleStore
+from pydentity.lookup_normalizer import UpperLookupNormalizer
+from pydentity.types import UserProtokol, RoleProtokol
+from pydentity.validators import UserValidator, RoleValidator, PasswordValidator
 
-For TotroiseORM:
 
-    pip install pydenticore[tortoise] 
+class User(UserProtokol):
+    ...
+
+
+class Role(RoleProtokol):
+    ...
+
+
+class UserStore(IUserStore):
+    ...
+
+
+class RoleStore(IRoleStore):
+    ...
+
+
+options = IdentityOptions()
+
+user_manager = UserManager(
+    UserStore(),
+    options=options,
+    password_hasher=Argon2PasswordHasher(),
+    password_validators=(PasswordValidator(),),
+    user_validators=(UserValidator(),),
+    key_normalizer=UpperLookupNormalizer(),
+)
+role_manager = RoleManager(
+    RoleStore(),
+    role_validators=(RoleValidator(),),
+    key_normalizer=UpperLookupNormalizer(),
+)
+
+
+async def create_user():
+    user = User(...)
+    result = await user_manager.create(user, "password")
+
+
+async def create_role():
+    role = Role()
+    result = await role_manager.create(role)
+```
 
 ## class `IdentityOptions`
 
@@ -111,13 +157,13 @@ from pydentity import UserManager, RoleManager
 from pydentity.validators import UserValidator, PasswordValidator, RoleValidator
 
 user_manager = UserManager(
-    ...,
-    user_validators=[UserValidator()],
-    password_validators=[PasswordValidator()],
+    ..., 
+    user_validators=[UserValidator()], 
+    password_validators=[PasswordValidator()]
 )
 role_manager = RoleManager(
-    ...,
-    role_validators=[RoleValidator()],
+    ..., 
+    role_validators=[RoleValidator()]
 )
 ```
 
@@ -163,7 +209,7 @@ role_manager = RoleManager(
 
 ## Password hashers
 
-Password hasher uses `pwdlib`.
+Password hasher uses [pwdlib](https://github.com/frankie567/pwdlib).
 
 ```python
 from pydentity import UserManager
@@ -198,7 +244,7 @@ class CustomPasswordHasher(IPasswordHasher):
 
 
 user_manager = UserManager(
-    ...,
+    ..., 
     password_hasher=CustomPasswordHasher()
 )
 ```
@@ -207,7 +253,7 @@ user_manager = UserManager(
 
 Tokens are used to verify mail, phone, and two-factor authentication.
 
-`TotpSecurityStampBasedTokenProvider` uses `pyotp`.
+`TotpSecurityStampBasedTokenProvider` uses [pyotp](https://github.com/pyauth/pyotp).
 
 | Provider                              | Type                                         |
 |---------------------------------------|----------------------------------------------|
@@ -260,8 +306,8 @@ sign_in_manager_logger.addHandler(sh)
 ### Custom logger
 
 ```python
-from pydentity.interfaces import ILogger
 from pydentity import UserManager
+from pydentity.interfaces import ILogger
 
 
 class UserManagerLogger(ILogger):
@@ -278,6 +324,9 @@ class UserManagerLogger(ILogger):
         pass
 
 
-user_manager = UserManager(..., logger=UserManagerLogger())
+user_manager = UserManager(
+    ..., 
+    logger=UserManagerLogger()
+)
 ```
 
