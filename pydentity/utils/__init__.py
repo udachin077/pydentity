@@ -1,23 +1,6 @@
-import base64
 from datetime import datetime as _datetime, timedelta, UTC
-from typing import Any
-from uuid import NAMESPACE_DNS, UUID, uuid5, getnode
 
-import pyotp
-
-from pydentity.exc import ArgumentNoneException
-
-__all__ = (
-    "datetime",
-    "generate_totp_qrcode_uri",
-    "get_device_uuid",
-    "is_none_or_empty",
-    "islist",
-)
-
-
-def islist(_object: Any):
-    return isinstance(_object, list)
+__all__ = ("datetime", "is_none_or_empty",)
 
 
 class datetime(_datetime):
@@ -25,8 +8,8 @@ class datetime(_datetime):
     def utcnow(cls) -> "datetime":
         return datetime.now(UTC)
 
-    def add(self, _timedelta: timedelta, /) -> "datetime":
-        return self.__add__(_timedelta)
+    def add(self, __td: timedelta, /) -> "datetime":
+        return self.__add__(__td)
 
     def add_days(self, days: float, /) -> "datetime":
         return self.add(timedelta(days=days))
@@ -50,23 +33,5 @@ class datetime(_datetime):
         return self.add(timedelta(weeks=weeks))
 
 
-def is_none_or_empty(_string: str | None, /) -> bool:
-    return bool(not _string or _string.isspace())
-
-
-def get_device_uuid() -> str:
-    return str(uuid5(NAMESPACE_DNS, str(UUID(int=getnode()))))
-
-
-def generate_totp_qrcode_uri(secret: str, name: str, app_name: str, modifier: str | None = None) -> str:
-    if not secret:
-        raise ArgumentNoneException("secret")
-    if not name:
-        raise ArgumentNoneException("name")
-    if not app_name:
-        raise ArgumentNoneException("app_name")
-
-    b32secret = secret.encode() + modifier.encode() if modifier else secret.encode()
-    return pyotp.TOTP(
-        base64.b32encode(b32secret).decode()
-    ).provisioning_uri(name=name, issuer_name=app_name)
+def is_none_or_empty(__s: str | None, /) -> bool:
+    return bool(not __s or __s.isspace())

@@ -1,5 +1,4 @@
-import pydentity.token_providers.rfc6238service as totp
-from pydentity.token_providers.token_provider import (
+from pydentity.token_providers.token_providers import (
     AuthenticatorTokenProvider,
     DataProtectorTokenProvider,
     EmailTokenProvider,

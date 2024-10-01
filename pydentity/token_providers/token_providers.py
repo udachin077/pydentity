@@ -1,11 +1,12 @@
+import base64
 from datetime import timedelta
-from typing import TYPE_CHECKING, Generic, override
+from typing import TYPE_CHECKING, Generic, override, Any
 
 from itsdangerous import URLSafeTimedSerializer, BadSignature, SignatureExpired
 
 from pydentity.interfaces import IUserTwoFactorTokenProvider, ILogger
 from pydentity.loggers import data_protection_token_provider_logger
-from pydentity.token_providers.rfc6238service import generate_code, validate_code
+from pydentity.rfc6238service import generate_code, validate_code
 from pydentity.types import TUser
 from pydentity.utils import is_none_or_empty
 
@@ -21,7 +22,33 @@ __all__ = (
 )
 
 
+def _apply_key_modifier(key: bytes | str, key_modifier: bytes | str | None = None) -> str:
+    """
+
+    :param key:
+    :param key_modifier:
+    :return: base32 string
+    """
+    if isinstance(key, str):
+        key = key.encode()
+
+    if isinstance(key_modifier, str):
+        key_modifier = key_modifier.encode()
+
+    return base64.b32encode(key + key_modifier if key_modifier else key).decode()
+
+
 class TotpSecurityStampBasedTokenProvider(IUserTwoFactorTokenProvider[TUser], Generic[TUser]):
+    def __init__(self, digits: int = 6, digest: Any = None, interval: int = 180) -> None:
+        """
+
+        :param digits: Number of integers in the OTP. Some apps expect this to be 6 digits, others support more.
+        :param digest: Digest function to use in the HMAC (expected to be SHA1)
+        :param interval: The time interval in seconds for OTP. This defaults to 180.
+        """
+        self.digits = digits
+        self.digest = digest
+        self.interval = interval
 
     async def can_generate_two_factor(self, manager: "UserManager[TUser]", user: TUser) -> bool:
         return True
@@ -42,11 +69,8 @@ class TotpSecurityStampBasedTokenProvider(IUserTwoFactorTokenProvider[TUser], Ge
         """
         security_token = await manager.create_security_token(user)
         modifier = await self.get_user_modifier(manager, purpose, user)
-        return generate_code(
-            security_token,
-            modifier,
-            interval=manager.options.tokens.totp_interval
-        )
+        secret = _apply_key_modifier(security_token, modifier)
+        return generate_code(secret, self.digits, self.digest, self.interval)
 
     async def validate(self, manager: "UserManager[TUser]", purpose: str, token: str, user: TUser) -> bool:
         """
@@ -60,12 +84,8 @@ class TotpSecurityStampBasedTokenProvider(IUserTwoFactorTokenProvider[TUser], Ge
         """
         security_token = await manager.create_security_token(user)
         modifier = await self.get_user_modifier(manager, purpose, user)
-        return bool(security_token and validate_code(
-            security_token,
-            token,
-            modifier,
-            interval=manager.options.tokens.totp_interval
-        ))
+        secret = _apply_key_modifier(security_token, modifier)
+        return validate_code(secret, token, self.digits, self.digest, self.interval)
 
     async def get_user_modifier(self, manager: "UserManager[TUser]", purpose: str, user: TUser) -> bytes:
         """
@@ -82,7 +102,7 @@ class TotpSecurityStampBasedTokenProvider(IUserTwoFactorTokenProvider[TUser], Ge
 
 
 class EmailTokenProvider(TotpSecurityStampBasedTokenProvider[TUser], Generic[TUser]):
-    """TokenProvider that generates tokens from the user"s security stamp and notifies a user via email."""
+    """TokenProvider that generates tokens from the users security stamp and notifies a user via email."""
 
     @override
     async def can_generate_two_factor(self, manager: "UserManager[TUser]", user: TUser) -> bool:
@@ -96,7 +116,7 @@ class EmailTokenProvider(TotpSecurityStampBasedTokenProvider[TUser], Generic[TUs
 
 
 class PhoneNumberTokenProvider(TotpSecurityStampBasedTokenProvider[TUser], Generic[TUser]):
-    """Represents a token provider that generates tokens from a user"s security stamp and
+    """Represents a token provider that generates tokens from a user security stamp and
     sends them to the user via their phone number."""
 
     @override
@@ -111,6 +131,17 @@ class PhoneNumberTokenProvider(TotpSecurityStampBasedTokenProvider[TUser], Gener
 
 
 class AuthenticatorTokenProvider(IUserTwoFactorTokenProvider[TUser], Generic[TUser]):
+    def __init__(self, digits: int = 6, digest: Any = None, interval: int = 30) -> None:
+        """
+
+        :param digits: Number of integers in the OTP. Some apps expect this to be 6 digits, others support more.
+        :param digest: Digest function to use in the HMAC (expected to be SHA1)
+        :param interval: The time interval in seconds for OTP. This defaults to 30.
+        """
+        self.digits = digits
+        self.digest = digest
+        self.interval = interval
+
     @override
     async def generate(self, manager: "UserManager[TUser]", purpose: str, user: TUser) -> str:
         return ""
@@ -120,7 +151,7 @@ class AuthenticatorTokenProvider(IUserTwoFactorTokenProvider[TUser], Generic[TUs
         key = await manager.get_authenticator_key(user)
         if is_none_or_empty(key):
             return False
-        return validate_code(key.encode(), token)
+        return validate_code(_apply_key_modifier(key), token, self.digits, self.digest, self.interval)
 
     @override
     async def can_generate_two_factor(self, manager: "UserManager[TUser]", user: TUser) -> bool:
@@ -155,6 +186,7 @@ class DataProtectorTokenProvider(IUserTwoFactorTokenProvider[TUser], Generic[TUs
     async def generate(self, manager: "UserManager[TUser]", purpose: str, user: TUser) -> str:
         user_id = await manager.get_user_id(user)
         stamp = None
+
         if manager.supports_user_security_stamp:
             stamp = await manager.get_security_stamp(user)
 

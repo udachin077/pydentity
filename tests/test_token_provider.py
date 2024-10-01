@@ -1,3 +1,4 @@
+import base64
 import uuid
 from typing import cast
 
@@ -6,7 +7,7 @@ import pytest
 from pydentity import UserManager, IdentityOptions
 from pydentity.token_providers import TotpSecurityStampBasedTokenProvider, AuthenticatorTokenProvider, \
     DataProtectorTokenProvider
-from pydentity.token_providers.rfc6238service import generate_code
+from pydentity.rfc6238service import generate_code
 from pydentity.types import UserProtokol
 
 
@@ -66,7 +67,7 @@ async def test_authenticator_token_provider(manager, mock_user):
     assert await provider.can_generate_two_factor(manager, mock_user) is True
     token = await provider.generate(manager, "", mock_user)
     assert token == ""
-    token = generate_code((await manager.get_authenticator_key(mock_user)).encode())
+    token = generate_code(base64.b32encode((await manager.get_authenticator_key(mock_user)).encode()).decode())
     result = await provider.validate(manager, "", token, mock_user)
     assert result is True
 

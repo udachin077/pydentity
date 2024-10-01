@@ -186,6 +186,7 @@ class SignInManager(Generic[TUser]):
         if auth and auth.principal:
             authentication_method = auth.principal.find_first(ClaimTypes.AuthenticationMethod)
             amr = auth.principal.find_first('amr')
+
             if authentication_method:
                 claims.append(authentication_method)
             if amr:
@@ -365,7 +366,7 @@ class SignInManager(Generic[TUser]):
                 return SignInResult.failed()
 
             if await self.user_manager.is_locked_out(user):
-                return await self._locked_out(user)
+                return await self._locked_out()
 
         return SignInResult.failed()
 
@@ -460,8 +461,8 @@ class SignInManager(Generic[TUser]):
             return SignInResult.failed()
 
         user = two_factor_info.user
-        error = await self._pre_sign_in_check(user)
-        if error:
+
+        if error := await self._pre_sign_in_check(user):
             return error
 
         if await self.user_manager.verify_two_factor_token(
@@ -473,11 +474,12 @@ class SignInManager(Generic[TUser]):
 
         if self.user_manager.supports_user_lockout:
             increment_lockout_result = await self.user_manager.access_failed(user)
+
             if not increment_lockout_result.succeeded:
                 return SignInResult.failed()
 
             if await self.user_manager.is_locked_out(user):
-                return await self._locked_out(user)
+                return await self._locked_out()
 
         return SignInResult.failed()
 
@@ -497,8 +499,8 @@ class SignInManager(Generic[TUser]):
             return SignInResult.failed()
 
         user = two_factor_info.user
-        error = await self._pre_sign_in_check(user)
-        if error:
+
+        if error := await self._pre_sign_in_check(user):
             return error
 
         if await self.user_manager.verify_two_factor_token(user, provider, code):
@@ -506,11 +508,12 @@ class SignInManager(Generic[TUser]):
 
         if self.user_manager.supports_user_lockout:
             increment_lockout_result = await self.user_manager.access_failed(user)
+
             if not increment_lockout_result.succeeded:
                 return SignInResult.failed()
 
             if await self.user_manager.is_locked_out(user):
-                return await self._locked_out(user)
+                return await self._locked_out()
 
         return SignInResult.failed()
 
@@ -534,9 +537,11 @@ class SignInManager(Generic[TUser]):
         user_id = await self.user_manager.get_user_id(user)
         remember_browser_identity = ClaimsIdentity(authentication_type=IdentityConstants.TwoFactorRememberMeScheme)
         remember_browser_identity.add_claims(Claim(ClaimTypes.Name, user_id))
+
         if self.user_manager.supports_user_security_stamp:
             stamp = await self.user_manager.get_security_stamp(user)
             remember_browser_identity.add_claims(Claim(self.options.claims_identity.security_stamp_claim_type, stamp))
+
         return ClaimsPrincipal(remember_browser_identity)
 
     async def _is_two_factor_enabled(self, user: TUser) -> bool:
@@ -608,11 +613,10 @@ class SignInManager(Generic[TUser]):
         """
         return self.user_manager.supports_user_lockout and await self.user_manager.is_locked_out(user)
 
-    async def _locked_out(self, user: TUser) -> SignInResult:  # noqa
+    async def _locked_out(self) -> SignInResult:
         """
         Returns a locked out SignInResult.
 
-        :param user:
         :return:
         """
         self.logger.warning("User is currently locked out.")
@@ -629,7 +633,7 @@ class SignInManager(Generic[TUser]):
             return SignInResult.not_allowed()
 
         if await self._is_locked_out(user):
-            return await self._locked_out(user)
+            return await self._locked_out()
 
         return None
 

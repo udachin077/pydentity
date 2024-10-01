@@ -1,3 +1,4 @@
+import base64
 import datetime as dt
 import random
 import uuid
@@ -47,6 +48,7 @@ from pydentity.interfaces.stores import (
 )
 from pydentity.loggers import user_manager_logger
 from pydentity.resources import Resources
+from pydentity.rfc6238service import get_provisioning_uri
 from pydentity.security.claims import ClaimsPrincipal, Claim, ClaimTypes
 from pydentity.types import TUser
 from pydentity.user_login_info import UserLoginInfo
@@ -60,13 +62,13 @@ class UserManager(Generic[TUser]):
 
     __slots__ = (
         '_logger',
-        'store',
         '_token_providers',
         'error_describer',
         'key_normalizer',
         'options',
         'password_hasher',
         'password_validators',
+        'store',
         'user_validators',
     )
 
@@ -1488,14 +1490,9 @@ class UserManager(Generic[TUser]):
         await self._update_security_stamp_internal(user)
         return await self._update_user(user)
 
-    def generate_new_authenticator_key(self) -> str:
-        """
-        Generates a new base32.
-
-        :return:
-        """
-        import pyotp
-        return pyotp.random_base32()
+    def generate_new_authenticator_key(self) -> str:  # noqa
+        """Generates a value suitable for use in authenticator."""
+        return str(uuid.uuid4())
 
     async def generate_new_two_factor_recovery_codes(self, user: TUser, number: int) -> Optional[set[str]]:
         """
@@ -1525,7 +1522,6 @@ class UserManager(Generic[TUser]):
         return '-'.join([self._get_random_recovery_code_char(), self._get_random_recovery_code_char()])
 
     def _get_random_recovery_code_char(self) -> str:  # noqa
-        """"""
         return "".join(random.choices('23456789BCDFGHJKMNPQRTVWXY', k=8))
 
     async def redeem_two_factor_recovery_code(self, user: TUser, code: str) -> IdentityResult:
@@ -1542,7 +1538,7 @@ class UserManager(Generic[TUser]):
         if not code:
             raise ArgumentNoneException('code')
 
-        if _ := await self._get_recovery_code_store().redeem_code(user, code):
+        if await self._get_recovery_code_store().redeem_code(user, code):
             return await self._update_user(user)
 
         return IdentityResult.failed(self.error_describer.RecoveryCodeRedemptionFailed())
@@ -1559,11 +1555,75 @@ class UserManager(Generic[TUser]):
 
         return await self._get_recovery_code_store().count_codes(user)
 
-    def get_personal_data(self, user: TUser) -> dict[str, Any]:
-        personal_data: dict[str, Any] = dict()
-        for prop in user.__personal_data__:  # type: ignore
-            personal_data.update({prop: getattr(user, prop)})
-        return personal_data
+    async def get_authenticator_provisioning_uri(
+            self,
+            user: TUser,
+            name: str | None = None,
+            appname: str = "Pydentity.Application",
+            *,
+            digits: int = 6,
+            digest: Any = None,
+            interval: int = 30,
+            image: str | None = None
+    ) -> str:
+        """
+        Returns the provisioning URI for the OTP. This can then be
+        encoded in a QR Code and used to provision an OTP app like
+        Google Authenticator.
+
+        :param user: The user to create the URI for.
+        :param name: Name of the account.
+        :param appname: The name of the OTP issuer;
+                        this will be the organization title of the OTP entry in Authenticator.
+        :param digits: Number of integers in the OTP. Some apps expect this to be 6 digits, others support more.
+        :param digest: Digest function to use in the HMAC (expected to be SHA1)
+        :param interval: The time interval in seconds for OTP. This defaults to 30.
+        :param image: Optional logo image URL.
+        :return:
+        """
+        if not user:
+            raise ArgumentNoneException('user')
+
+        key = await self.get_authenticator_key(user)
+        enabled = await self.get_two_factor_enabled(user)
+
+        if not enabled or not key:
+            self._logger.error(
+                f"Unable to load two-factor authentication user. "
+                f"Enabled 2FA: {enabled}. "
+                f"Authenticator key: {'UNDEFINED' if not key else 'INSTALLED'}."
+            )
+            raise InvalidOperationException("Unable to load two-factor authentication user.")
+
+        name = (
+                name or
+                (self.supports_user_email and await self.get_email(user)) or
+                await self.get_username(user) or
+                await self.get_user_id(user)
+        )
+
+        if not name:
+            raise ValueError("The 'name' value is None or it could not be set.")
+
+        return get_provisioning_uri(
+            secret=base64.b32encode(key.encode()).decode(),
+            name=name,
+            issuer_name=appname,
+            digits=digits,
+            digest=digest,
+            interval=interval,
+            image=image
+        )
+
+    def get_personal_data(self, user: TUser) -> dict[str, Any] | None:
+        if hasattr(user, "__personal_data__"):
+            return {p: getattr(user, p) for p in getattr(user, '__personal_data__')}
+
+        self._logger.warning(
+            f"The model '{type(user)}' does not support receiving personal data. "
+            f"The model must have the '__personal_data__' attribute, which lists the fields related to personal data."
+        )
+        return None
 
     def _normalize_name(self, name: Optional[str]) -> Optional[str]:
         """Normalize user or role name for consistent comparisons."""
@@ -1635,7 +1695,7 @@ class UserManager(Generic[TUser]):
 
         return IdentityResult.success()
 
-    async def create_security_token(self, user: TUser) -> bytes:
+    async def create_security_token(self, user: TUser) -> str:
         """
         Creates bytes to use as a security token from the user's security stamp.
 
@@ -1643,7 +1703,7 @@ class UserManager(Generic[TUser]):
         :return:
         """
         if stamp := await self.get_security_stamp(user):
-            return stamp.encode()
+            return stamp
         raise ArgumentNoneException('security_stamp')
 
     async def _update_security_stamp_internal(self, user: TUser) -> None:

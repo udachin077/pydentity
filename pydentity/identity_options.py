@@ -152,8 +152,6 @@ class TokenOptions:
         """Gets or sets the token provider used to generate tokens used in account confirmation phone number."""
         self.password_reset_token_provider: str = self.DEFAULT_PROVIDER
         """Gets or sets the token provider used to generate tokens used in password reset emails."""
-        self.totp_interval = 180
-        """Gets or sets the totp interval. Defaults to ``180`` seconds."""
         self.provider_map: dict[str, IUserTwoFactorTokenProvider[TUser]] = {}  # type: ignore
 
 
