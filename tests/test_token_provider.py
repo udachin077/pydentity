@@ -5,9 +5,12 @@ from typing import cast
 import pytest
 
 from pydentity import UserManager, IdentityOptions
-from pydentity.token_providers import TotpSecurityStampBasedTokenProvider, AuthenticatorTokenProvider, \
-    DataProtectorTokenProvider
 from pydentity.rfc6238service import generate_code
+from pydentity.token_providers import (
+    TotpSecurityStampBasedTokenProvider,
+    AuthenticatorTokenProvider,
+    DataProtectorTokenProvider,
+)
 from pydentity.types import UserProtokol
 
 

@@ -47,7 +47,7 @@ role_manager = RoleManager(
 
 
 async def create_user():
-    user = User(...)
+    user = User()
     result = await user_manager.create(user, "password")
 
 
@@ -137,7 +137,6 @@ Options for user tokens.
 | `email_confirmation_token_provider`        | `str`  | Gets or sets the token provider used to generate tokens used in account confirmation emails.       | `DEFAULT_EMAIL_PROVIDER`          |
 | `phone_number_confirmation_token_provider` | `str`  | Gets or sets the token provider used to generate tokens used in account confirmation phone number. | `DEFAULT_PHONE_PROVIDER`          |
 | `password_reset_token_provider`            | `str`  | Gets or sets the token provider used to generate tokens used in password reset emails.             | `DEFAULT_PROVIDER`                |
-| `totp_interval`                            | `int`  | Gets or sets the totp interval in seconds.                                                         | `180`                             |
 | `provider_map`                             | `dict` | Will be used to construct user token providers with the key used as the provider name.             | `{}`                              |
 
 ### class `UserOptions`
@@ -254,6 +253,8 @@ user_manager = UserManager(
 Tokens are used to verify mail, phone, and two-factor authentication.
 
 `TotpSecurityStampBasedTokenProvider` uses [pyotp](https://github.com/pyauth/pyotp).
+
+`DataProtectorTokenProvider` uses [itsdangerous](https://github.com/pallets/itsdangerous).
 
 | Provider                              | Type                                         |
 |---------------------------------------|----------------------------------------------|

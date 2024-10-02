@@ -1,11 +1,8 @@
 import base64
-from datetime import timedelta
 from typing import TYPE_CHECKING, Generic, override, Any
+from uuid import UUID
 
-from itsdangerous import URLSafeTimedSerializer, BadSignature, SignatureExpired
-
-from pydentity.interfaces import IUserTwoFactorTokenProvider, ILogger
-from pydentity.loggers import data_protection_token_provider_logger
+from pydentity.interfaces import IUserTwoFactorTokenProvider
 from pydentity.rfc6238service import generate_code, validate_code
 from pydentity.types import TUser
 from pydentity.utils import is_none_or_empty
@@ -14,15 +11,13 @@ if TYPE_CHECKING:
     from pydentity.user_manager import UserManager
 
 __all__ = (
-    "AuthenticatorTokenProvider",
-    "DataProtectorTokenProvider",
     "EmailTokenProvider",
     "PhoneNumberTokenProvider",
     "TotpSecurityStampBasedTokenProvider",
 )
 
 
-def _apply_key_modifier(key: bytes | str, key_modifier: bytes | str | None = None) -> str:
+def _apply_key_modifier(key: bytes | str | UUID, key_modifier: bytes | str | None = None) -> str:
     """
 
     :param key:
@@ -31,6 +26,8 @@ def _apply_key_modifier(key: bytes | str, key_modifier: bytes | str | None = Non
     """
     if isinstance(key, str):
         key = key.encode()
+    elif isinstance(key, UUID):
+        key = key.bytes
 
     if isinstance(key_modifier, str):
         key_modifier = key_modifier.encode()
@@ -128,104 +125,3 @@ class PhoneNumberTokenProvider(TotpSecurityStampBasedTokenProvider[TUser], Gener
     async def get_user_modifier(self, manager: "UserManager[TUser]", purpose: str, user: TUser) -> bytes:
         phone_number = await manager.get_phone_number(user)
         return f"PhoneNumber:{purpose}:{phone_number}".encode()
-
-
-class AuthenticatorTokenProvider(IUserTwoFactorTokenProvider[TUser], Generic[TUser]):
-    def __init__(self, digits: int = 6, digest: Any = None, interval: int = 30) -> None:
-        """
-
-        :param digits: Number of integers in the OTP. Some apps expect this to be 6 digits, others support more.
-        :param digest: Digest function to use in the HMAC (expected to be SHA1)
-        :param interval: The time interval in seconds for OTP. This defaults to 30.
-        """
-        self.digits = digits
-        self.digest = digest
-        self.interval = interval
-
-    @override
-    async def generate(self, manager: "UserManager[TUser]", purpose: str, user: TUser) -> str:
-        return ""
-
-    @override
-    async def validate(self, manager: "UserManager[TUser]", purpose: str, token: str, user: TUser) -> bool:
-        key = await manager.get_authenticator_key(user)
-        if is_none_or_empty(key):
-            return False
-        return validate_code(_apply_key_modifier(key), token, self.digits, self.digest, self.interval)
-
-    @override
-    async def can_generate_two_factor(self, manager: "UserManager[TUser]", user: TUser) -> bool:
-        key = await manager.get_authenticator_key(user)
-        return not is_none_or_empty(key)
-
-
-class DataProtectorTokenProvider(IUserTwoFactorTokenProvider[TUser], Generic[TUser]):
-    __slots__ = ("_serializer", "_token_lifespan", "_logger",)
-
-    def __init__(
-            self,
-            purpose: str | None = None,
-            token_lifespan: int | timedelta = 600,
-            logger: ILogger["DataProtectorTokenProvider"] | None = None
-    ) -> None:
-        """
-
-        :param purpose:
-        :param token_lifespan: The amount of time a generated token remains valid. Default to 600 seconds.
-        :param logger:
-        """
-        self._serializer = URLSafeTimedSerializer(purpose or "DataProtectorTokenProvider")
-
-        if isinstance(token_lifespan, timedelta):
-            self._token_lifespan = int(token_lifespan.total_seconds())
-        else:
-            self._token_lifespan = token_lifespan
-
-        self._logger = logger or data_protection_token_provider_logger
-
-    async def generate(self, manager: "UserManager[TUser]", purpose: str, user: TUser) -> str:
-        user_id = await manager.get_user_id(user)
-        stamp = None
-
-        if manager.supports_user_security_stamp:
-            stamp = await manager.get_security_stamp(user)
-
-        data = {"user_id": user_id, "purpose": purpose or "", "stamp": stamp or ""}
-        return self._serializer.dumps(data)
-
-    async def can_generate_two_factor(self, manager: "UserManager[TUser]", user: TUser) -> bool:
-        return False
-
-    async def validate(self, manager: "UserManager[TUser]", purpose: str, token: str, user: TUser) -> bool:
-        try:
-            data = self._serializer.loads(token, max_age=self._token_lifespan)
-        except BadSignature:
-            self._logger.error("Bad signature.")
-            return False
-        except SignatureExpired:
-            self._logger.error("Invalid expiration time.")
-            return False
-        else:
-            try:
-                if data["user_id"] != await manager.get_user_id(user):
-                    self._logger.error("User ID not equals.")
-                    return False
-
-                if data["purpose"] != purpose:
-                    self._logger.error("Purpose not equals.")
-                    return False
-
-                if manager.supports_user_security_stamp:
-                    is_equals_security_stamp = data["stamp"] == await manager.get_security_stamp(user)
-                    if not is_equals_security_stamp:
-                        self._logger.error("Security stamp not equals.")
-                    return is_equals_security_stamp
-
-                stamp_is_empty = not bool(data["stamp"])
-                if not stamp_is_empty:
-                    self._logger.error("Security stamp is not empty.")
-                return stamp_is_empty
-
-            except KeyError as ex:
-                self._logger.error(str(ex))
-                return False
