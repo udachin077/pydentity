@@ -1,3 +1,4 @@
+from pydentity.interfaces.stores.role_store import IRoleStore, IRoleClaimStore
 from pydentity.interfaces.stores.user_store import (
     IUserAuthenticationTokenStore,
     IUserAuthenticatorKeyStore,
@@ -6,6 +7,7 @@ from pydentity.interfaces.stores.user_store import (
     IUserLockoutStore,
     IUserLoginStore,
     IUserPasswordStore,
+    IUserPersonalDataStore,
     IUserPhoneNumberStore,
     IUserRoleStore,
     IUserSecurityStampStore,
@@ -13,4 +15,3 @@ from pydentity.interfaces.stores.user_store import (
     IUserTwoFactorRecoveryCodeStore,
     IUserTwoFactorStore,
 )
-from pydentity.interfaces.stores.role_store import IRoleStore, IRoleClaimStore

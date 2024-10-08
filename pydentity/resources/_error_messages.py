@@ -29,6 +29,7 @@ _ERROR_MESSAGES: dict[str, str] = {
     "StoreNotIUserLockoutStore": "Store does not implement IUserLockoutStore[TUser].",
     "StoreNotIUserLoginStore": "Store does not implement IUserLoginStore[TUser].",
     "StoreNotIUserPasswordStore": "Store does not implement IUserPasswordStore[TUser].",
+    "StoreNotIUserPersonalDataStore": "Store does not implement IUserPersonalDataStore[TUser].",
     "StoreNotIUserPhoneNumberStore": "Store does not implement IUserPhoneNumberStore[TUser].",
     "StoreNotIUserRoleStore": "Store does not implement IUserRoleStore[TUser].",
     "StoreNotIUserSecurityStampStore": "Store does not implement IUserSecurityStampStore[TUser].",

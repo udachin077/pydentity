@@ -39,6 +39,7 @@ from pydentity.interfaces.stores import (
     IUserLockoutStore,
     IUserLoginStore,
     IUserPasswordStore,
+    IUserPersonalDataStore,
     IUserPhoneNumberStore,
     IUserRoleStore,
     IUserSecurityStampStore,
@@ -242,6 +243,16 @@ class UserManager(Generic[TUser]):
         :return:
         """
         return issubclass(type(self.store), IUserLockoutStore)
+
+    @property
+    def supports_user_personal_data(self) -> bool:
+        """
+        Gets a flag indicating whether the backing user store supports user personal data.
+        ``True`` if the backing user store supports user personal data, otherwise ``False``.
+
+        :return:
+        """
+        return issubclass(type(self.store), IUserPersonalDataStore)
 
     def register_token_provider(self, provider_name: str, provider: IUserTwoFactorTokenProvider[TUser]) -> None:
         """
@@ -1615,15 +1626,8 @@ class UserManager(Generic[TUser]):
             image=image
         )
 
-    def get_personal_data(self, user: TUser) -> dict[str, Any] | None:
-        if hasattr(user, "__personal_data__"):
-            return {p: getattr(user, p) for p in getattr(user, '__personal_data__')}
-
-        self._logger.warning(
-            f"The model '{type(user)}' does not support receiving personal data. "
-            f"The model must have the '__personal_data__' attribute, which lists the fields related to personal data."
-        )
-        return None
+    async def get_personal_data(self, user: TUser) -> dict[str, Any] | None:
+        return await self._get_user_personal_data_store().get_personal_data(user)
 
     def _normalize_name(self, name: Optional[str]) -> Optional[str]:
         """Normalize user or role name for consistent comparisons."""
@@ -1783,3 +1787,8 @@ class UserManager(Generic[TUser]):
         if self.supports_user_lockout:
             return cast(IUserLockoutStore[TUser], self.store)
         raise NotSupportedException(Resources['StoreNotIUserLockoutStore'])
+
+    def _get_user_personal_data_store(self) -> IUserPersonalDataStore[TUser]:
+        if self.supports_user_personal_data:
+            return cast(IUserPersonalDataStore[TUser], self.store)
+        raise NotSupportedException(Resources['StoreNotIUserPersonalDataStore'])

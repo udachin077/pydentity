@@ -626,3 +626,9 @@ class IUserTwoFactorStore(IUserStore[TUser], Generic[TUser], ABC):
         :param enabled: A flag indicating whether the specified user has two-factor authentication enabled.
         :return:
         """
+
+
+class IUserPersonalDataStore(IUserStore[TUser], Generic[TUser], ABC):
+    @abstractmethod
+    async def get_personal_data(self, user: TUser) -> dict[str, Any] | None:
+        pass
